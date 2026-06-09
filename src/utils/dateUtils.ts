@@ -145,12 +145,12 @@ export function getLunarDetails(dateStr: string, zone: string): LunarResult | nu
       lunarStr: lunar.toString(),
       yearGanZhi: lunar.getYearInGanZhi(),
       shengXiao: lunar.getYearShengXiao(),
-      monthName: (lunar.isMonthLeap() ? '闰' : '') + lunar.getMonthInChinese() + '月',
+      monthName: lunar.getMonthInChinese() + '月',
       dayName: lunar.getDayInChinese(),
       jieQi: lunar.getJieQi() || '',
       festivals: [...lunar.getFestivals(), ...solar.getFestivals()],
-      yi: lunar.getYi() || [],
-      ji: lunar.getJi() || [],
+      yi: lunar.getDayYi() || [],
+      ji: lunar.getDayJi() || [],
     };
   } catch (e) {
     console.error('Error fetching lunar details:', e);

@@ -81,7 +81,7 @@ export const LunarCalculator: React.FC = () => {
       const jsDate = new Date();
       const solar = Solar.fromDate(jsDate);
       const lunar = solar.getLunar();
-      return lunar.isMonthLeap();
+      return lunar.isLeap();
     } catch {
       return false;
     }
