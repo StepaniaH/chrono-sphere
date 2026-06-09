@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CalendarRange } from 'lucide-react';
-import { calculateInterval, detectDstTransitions, getFriendlyZoneLabel } from '../utils/dateUtils';
+import { calculateInterval, detectDstTransitions, getFriendlyZoneLabel, getLunarDetails } from '../utils/dateUtils';
 import type { IntervalResult } from '../utils/dateUtils';
 import { TimezoneSelect } from './TimezoneSelect';
 import { DstAuditor } from './DstAuditor';
@@ -118,6 +118,14 @@ export const IntervalCalculator: React.FC = () => {
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
+            {startDate && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: '4px', marginTop: '2px' }}>
+                {(() => {
+                  const d = getLunarDetails(startDate, startZone);
+                  return d ? `农历：${d.lunarStr} (${d.yearGanZhi}${d.shengXiao}年)` : '';
+                })()}
+              </span>
+            )}
           </div>
         </div>
 
@@ -141,6 +149,14 @@ export const IntervalCalculator: React.FC = () => {
                 onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
+            {endDate && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: '4px', marginTop: '2px' }}>
+                {(() => {
+                  const d = getLunarDetails(endDate, endZone);
+                  return d ? `农历：${d.lunarStr} (${d.yearGanZhi}${d.shengXiao}年)` : '';
+                })()}
+              </span>
+            )}
           </div>
         </div>
 
@@ -236,6 +252,31 @@ export const IntervalCalculator: React.FC = () => {
               </div>
               <div style={{ textAlign: 'center', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--accent-secondary)' }}>
                 {result.absoluteDays} 天 {result.absoluteHours} 小时
+              </div>
+            </div>
+
+            {/* Lunar Calendar equivalents */}
+            <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="result-card-heading" style={{ border: 'none', padding: 0, fontSize: '0.75rem', textTransform: 'none', letterSpacing: '0.05em' }}>农历对应信息</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>起始农历</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {(() => {
+                      const d = getLunarDetails(startDate, startZone);
+                      return d ? `${d.lunarStr} (${d.yearGanZhi}${d.shengXiao}年)` : '';
+                    })()}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>结束农历</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {(() => {
+                      const d = getLunarDetails(endDate, endZone);
+                      return d ? `${d.lunarStr} (${d.yearGanZhi}${d.shengXiao}年)` : '';
+                    })()}
+                  </span>
+                </div>
               </div>
             </div>
 

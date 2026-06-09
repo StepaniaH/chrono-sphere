@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Plus, CalendarRange } from 'lucide-react';
-import { calculateOffset, detectDstTransitions } from '../utils/dateUtils';
+import { calculateOffset, detectDstTransitions, getLunarDetails } from '../utils/dateUtils';
 import type { DateResult, DstTransition } from '../utils/dateUtils';
 import { TimezoneSelect } from './TimezoneSelect';
 import { DstAuditor } from './DstAuditor';
@@ -88,6 +88,14 @@ export const OffsetCalculator: React.FC = () => {
               onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
+          {startDate && (
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', paddingLeft: '4px', marginTop: '2px' }}>
+              {(() => {
+                const details = getLunarDetails(startDate, zone);
+                return details ? `农历：${details.lunarStr} (${details.yearGanZhi}${details.shengXiao}年)` : '';
+              })()}
+            </span>
+          )}
         </div>
 
         <div className="form-group">
@@ -153,6 +161,31 @@ export const OffsetCalculator: React.FC = () => {
                   <span className="meta-pill">UTC{result.offsetHours >= 0 ? `+${result.offsetHours}` : result.offsetHours} ({result.offsetName})</span>
                   {result.isDst && <span className="meta-pill dst-active">夏令时中</span>}
                 </div>
+                {(() => {
+                  const details = getLunarDetails(result.dateStr, zone);
+                  if (!details) return null;
+                  return (
+                    <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', borderTop: '1px dashed rgba(255, 255, 255, 0.05)', paddingTop: '12px' }}>
+                      <div style={{ fontSize: '1.25rem', color: 'var(--accent-primary)', fontWeight: 700 }}>
+                        农历 {details.lunarStr}
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <span className="meta-pill">{details.yearGanZhi}年</span>
+                        <span className="meta-pill">属{details.shengXiao}</span>
+                        {details.jieQi && (
+                          <span className="meta-pill" style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)', background: 'rgba(16, 185, 129, 0.05)' }}>
+                            {details.jieQi}
+                          </span>
+                        )}
+                        {details.festivals.map(f => (
+                          <span key={f} className="meta-pill" style={{ borderColor: 'var(--accent-secondary)', color: 'var(--accent-secondary)', background: 'rgba(168, 85, 247, 0.05)' }}>
+                            {f}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 

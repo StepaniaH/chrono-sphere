@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { Solar, Lunar } from 'lunar-javascript';
 
 export interface DateResult {
   dateStr: string;
@@ -24,6 +25,18 @@ export interface CountryTimezone {
   city: string;
   group: string;
   searchText: string;
+}
+
+export interface LunarResult {
+  lunarStr: string;
+  yearGanZhi: string;
+  shengXiao: string;
+  monthName: string;
+  dayName: string;
+  jieQi: string;
+  festivals: string[];
+  yi: string[];
+  ji: string[];
 }
 
 // Country & Region based timezone database
@@ -116,6 +129,58 @@ function getDateResult(dt: DateTime): DateResult {
 }
 
 /**
+ * Get Chinese Lunar details for a Gregorian date
+ */
+export function getLunarDetails(dateStr: string, zone: string): LunarResult | null {
+  try {
+    const dt = DateTime.fromISO(dateStr, { zone });
+    if (!dt.isValid) return null;
+    
+    // Create local Date object
+    const jsDate = new Date(dt.year, dt.month - 1, dt.day);
+    const solar = Solar.fromDate(jsDate);
+    const lunar = solar.getLunar();
+    
+    return {
+      lunarStr: lunar.toString(),
+      yearGanZhi: lunar.getYearInGanZhi(),
+      shengXiao: lunar.getYearShengXiao(),
+      monthName: (lunar.isMonthLeap() ? '闰' : '') + lunar.getMonthInChinese() + '月',
+      dayName: lunar.getDayInChinese(),
+      jieQi: lunar.getJieQi() || '',
+      festivals: [...lunar.getFestivals(), ...solar.getFestivals()],
+      yi: lunar.getYi() || [],
+      ji: lunar.getJi() || [],
+    };
+  } catch (e) {
+    console.error('Error fetching lunar details:', e);
+    return null;
+  }
+}
+
+/**
+ * Convert Lunar date to Gregorian Date string (yyyy-MM-dd)
+ */
+export function convertLunarToSolar(
+  year: number,
+  month: number,
+  day: number,
+  isLeap: boolean
+): { success: boolean; dateStr?: string; error?: string } {
+  try {
+    const lunar = Lunar.fromYmd(year, isLeap ? -month : month, day);
+    const solar = lunar.getSolar();
+    
+    return {
+      success: true,
+      dateStr: solar.toYmd(),
+    };
+  } catch (e: any) {
+    return { success: false, error: e.message || '转换出错，请检查农历日期是否存在' };
+  }
+}
+
+/**
  * Calculate target date from start date by offset days
  * @param startDateStr 'yyyy-MM-dd'
  * @param offset X days
@@ -187,7 +252,7 @@ export function calculateInterval(
       return { success: false, error: '起始日期或结束日期无效' };
     }
 
-    // 1. Local Calendar Day Difference (calculated by treating dates as local strings)
+    // 1. Local Calendar Day Difference
     const startUtc = DateTime.fromISO(startDateStr, { zone: 'UTC' }).startOf('day');
     const endUtc = DateTime.fromISO(endDateStr, { zone: 'UTC' }).startOf('day');
     const diffDays = Math.round(endUtc.diff(startUtc, 'days').days);
@@ -204,7 +269,7 @@ export function calculateInterval(
       totalDays = Math.max(0, absDiffDays - 1);
     }
 
-    // 2. Workdays and Weekends (local calendar dates)
+    // 2. Workdays and Weekends
     let workdays = 0;
     let weekends = 0;
 
@@ -240,7 +305,7 @@ export function calculateInterval(
       }
     }
 
-    // 3. Absolute Elapsed Time (comparing absolute UTC instants of start-day-midnight and end-day-midnight)
+    // 3. Absolute Elapsed Time
     const startInstant = startLocal.startOf('day');
     const endInstant = endLocal.startOf('day');
     const diffHoursAbs = endInstant.diff(startInstant, 'hours').hours;
