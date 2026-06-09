@@ -284,6 +284,8 @@ export const IntervalCalculator: React.FC = () => {
               startDateStr={startDate} 
               endDateStr={endDate} 
               totalDays={result.totalDays} 
+              startZone={startZone}
+              endZone={endZone}
             />
 
             <DstAuditor transitions={transitions} zone="" isDualZone={startZone !== endZone} />

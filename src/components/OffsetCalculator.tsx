@@ -193,6 +193,8 @@ export const OffsetCalculator: React.FC = () => {
               startDateStr={startDate} 
               endDateStr={result.dateStr} 
               totalDays={parseInt(offsetStr, 10) * (mode === 'thDay' ? 1 : 1) - (mode === 'thDay' ? 1 : 0)} 
+              startZone={zone}
+              endZone={zone}
             />
 
             <DstAuditor transitions={transitions} zone={zone} />
