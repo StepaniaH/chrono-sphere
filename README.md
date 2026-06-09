@@ -1,73 +1,75 @@
-# React + TypeScript + Vite
+# ChronoSphere - 高精度时区感知日期计算与农历服务
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ChronoSphere（时空之轮）是一款专为高精度、跨时区、夏令时(DST)审计感知以及中国农历设计的日期计算服务。应用采用 **纯客户端架构** 运行，完全保障用户数据隐私安全，支持一键部署至 Vercel 平台。
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌟 核心功能
 
-## React Compiler
+### 1. 日期偏移计算 (Date Offset Calculator)
+- 输入基准日期，计算向后或向前偏移 $X$ 日后的具体公历及农历日期。
+- 支持 **「间隔 X 日」**（$D + X$）与 **「第 X 日」**（首日算作第一天，$D + X - 1$）双模式计算。
+- 提供日历对应的周几、时区标识、以及目标时间是否处于夏令时。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 2. 日期区间计算 (Date Interval Calculator)
+- **双时区支持**：支持为「起始日期」和「结束日期」分别指定不同的国家/地区时区。
+- **日历天数差**：计算两地 local 时间下的实际日历间隔天数。
+- **跨时区绝对时间差**：计算从起始点 0 点到结束点 0 点实际物理流逝的绝对小时数与天数（消除两地时差的影响）。
+- **包含规则选择**：支持包括首尾日（$+1$）、仅包括首日（$+0$）、仅包括尾日（$+0$）以及不包括首尾日（$-1$）四种包含规则。
+- **工作日统计**：自动统计该期间内的工作日（周一至周五）与双休日（周六至周日）天数。
 
-## Expanding the ESLint configuration
+### 3. 时区搜索与夏令时审计 (DST Transition Auditor)
+- **国家/地区时区匹配**：支持输入中文国家名或城市名（如“中国”、“美国”、“伦敦”、“悉尼”）进行智能匹配，自动换算 IANA 时区。
+- **夏令时变更审计**：自动扫描计算周期内的所有夏令时转换事件，智能标记时钟拨快（少 1 小时）或拨慢（多 1 小时）的具体日期及原委。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 4. 农历日期计算与黄历宜忌 (Chinese Lunar Calendar)
+- **农历偏移计算**：支持直接输入农历日期（年、月、大/小月、闰月），计算偏移天数后的新农历日期、对应公历日期。
+- **传统黄历宜忌**：对于计算结果，可获取天干地支、十二生肖、二十四节气、公农历节日，以及每日黄历的 **宜** 和 **忌** 事项。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 5. 可视化区间分析 (Range Visualizer)
+- **天数分布图**：通过高对比度发光渐变条展示工作日与双休日的分布比例。
+- **事件标记轴**：在时间轴的对应比例位置，通过图标和气泡标签动态标示区间内发生的 **节气**、**节日** 以及 **夏令时切换点**。
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 🔒 隐私保障 (Privacy & Security)
+
+ChronoSphere 极其重视用户的信息隐私：
+- **纯本地计算**：应用不包含任何后端 API 接口，所有日期转换、时区解析、黄历匹配均在浏览器中依靠本地 JavaScript 内存运行。
+- **零网络数据传输**：您输入的日期、天数、以及查询的国家/地区信息 **永远不会上传至任何服务器**，即使离线断网也可以正常计算。
+
+---
+
+## 🛠️ 本地安装与开发
+
+本应用使用 **React + TypeScript + Vite** 构建，依赖于 `luxon` 处理时区，`lunar-javascript` 处理农历。
+
+### 1. 克隆并安装依赖
+```bash
+# 安装本地依赖 (不污染全局环境)
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 2. 运行本地开发服务器
+```bash
+npm run dev
 ```
+启动后在浏览器中打开输出的本地链接（如 `http://localhost:5173`）即可访问。
+
+### 3. 生产打包
+```bash
+npm run build
+```
+打包生成的高效静态文件将输出在 `dist` 目录中。
+
+---
+
+## 🚀 部署至 Vercel
+
+项目根目录包含完整的 [vercel.json](vercel.json)，支持快速部署：
+
+```bash
+# 使用 Vercel CLI 一键部署
+vercel
+```
+或者在 Vercel 控制台直接绑定您的 GitHub 仓库，即可实现自动持续构建（CI/CD）。
