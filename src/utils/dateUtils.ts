@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon';
 import { Solar, Lunar } from 'lunar-javascript';
+import { translate, type Locale } from '../i18n';
 
 export interface DateResult {
   dateStr: string;
@@ -27,6 +28,17 @@ export interface CountryTimezone {
   searchText: string;
 }
 
+type TimezoneGroupKey = 'commonAsia' | 'america' | 'europeAfrica' | 'oceania' | 'utc';
+
+interface TimezoneEntry {
+  value: string;
+  countryZh: string;
+  countryEn: string;
+  cityZh: string;
+  cityEn: string;
+  groupKey: TimezoneGroupKey;
+}
+
 export interface LunarResult {
   lunarStr: string;
   yearGanZhi: string;
@@ -39,91 +51,124 @@ export interface LunarResult {
   ji: string[];
 }
 
-// Country & Region based timezone database
-const timezoneDatabase = [
-  { value: 'Asia/Shanghai', country: '中国', city: '北京/上海 (北京时间)', group: '常用与亚洲' },
-  { value: 'Asia/Hong_Kong', country: '中国香港', city: '香港', group: '常用与亚洲' },
-  { value: 'Asia/Taipei', country: '中国台湾', city: '台北', group: '常用与亚洲' },
-  { value: 'Asia/Macau', country: '中国澳门', city: '澳门', group: '常用与亚洲' },
-  { value: 'Asia/Urumqi', country: '中国', city: '乌鲁木齐 (新疆时间)', group: '常用与亚洲' },
-  { value: 'America/New_York', country: '美国', city: '纽约 (东部时间)', group: '美洲' },
-  { value: 'America/Chicago', country: '美国', city: '芝加哥 (中部时间)', group: '美洲' },
-  { value: 'America/Denver', country: '美国', city: '丹佛 (山地时间)', group: '美洲' },
-  { value: 'America/Los_Angeles', country: '美国', city: '洛杉矶 (太平洋时间)', group: '美洲' },
-  { value: 'America/Anchorage', country: '美国', city: '安克雷奇 (阿拉斯加时间)', group: '美洲' },
-  { value: 'Pacific/Honolulu', country: '美国', city: '檀香山/火奴鲁鲁 (夏威夷时间)', group: '美洲' },
-  { value: 'Europe/London', country: '英国', city: '伦敦 (格林威治/夏令时)', group: '欧洲与非洲' },
-  { value: 'Europe/Paris', country: '法国', city: '巴黎 (中欧时间)', group: '欧洲与非洲' },
-  { value: 'Europe/Berlin', country: '德国', city: '柏林 (中欧时间)', group: '欧洲与非洲' },
-  { value: 'Europe/Rome', country: '意大利', city: '罗马 (中欧时间)', group: '欧洲与非洲' },
-  { value: 'Europe/Moscow', country: '俄罗斯', city: '莫斯科', group: '欧洲与非洲' },
-  { value: 'Africa/Johannesburg', country: '南非', city: '约翰内斯堡', group: '欧洲与非洲' },
-  { value: 'Africa/Cairo', country: '埃及', city: '开罗', group: '欧洲与非洲' },
-  { value: 'Asia/Tokyo', country: '日本', city: '东京', group: '常用与亚洲' },
-  { value: 'Asia/Seoul', country: '韩国', city: '首尔', group: '常用与亚洲' },
-  { value: 'Asia/Singapore', country: '新加坡', city: '新加坡', group: '常用与亚洲' },
-  { value: 'Asia/Kolkata', country: '印度', city: '加尔各答', group: '常用与亚洲' },
-  { value: 'Asia/Dubai', country: '阿联酋', city: '迪拜', group: '常用与亚洲' },
-  { value: 'Australia/Sydney', country: '澳大利亚', city: '悉尼 (东部时间)', group: '大洋洲' },
-  { value: 'Australia/Adelaide', country: '澳大利亚', city: '阿德莱德 (中部时间)', group: '大洋洲' },
-  { value: 'Australia/Perth', country: '澳大利亚', city: '珀斯 (西部时间)', group: '大洋洲' },
-  { value: 'Pacific/Auckland', country: '新西兰', city: '奥克兰', group: '大洋洲' },
-  { value: 'America/Toronto', country: '加拿大', city: '多伦多 (东部时间)', group: '美洲' },
-  { value: 'America/Vancouver', country: '加拿大', city: '温哥华 (太平洋时间)', group: '美洲' },
-  { value: 'America/Sao_Paulo', country: '巴西', city: '圣保罗', group: '美洲' },
-  { value: 'UTC', country: '协调世界时', city: '全球 (UTC)', group: '协调世界时' },
+const timezoneDatabase: TimezoneEntry[] = [
+  { value: 'Asia/Shanghai', countryZh: '中国', countryEn: 'China', cityZh: '北京 / 上海（北京时间）', cityEn: 'Beijing / Shanghai (China Standard Time)', groupKey: 'commonAsia' },
+  { value: 'Asia/Hong_Kong', countryZh: '中国香港', countryEn: 'Hong Kong', cityZh: '香港', cityEn: 'Hong Kong', groupKey: 'commonAsia' },
+  { value: 'Asia/Taipei', countryZh: '中国台湾', countryEn: 'Taiwan', cityZh: '台北', cityEn: 'Taipei', groupKey: 'commonAsia' },
+  { value: 'Asia/Macau', countryZh: '中国澳门', countryEn: 'Macau', cityZh: '澳门', cityEn: 'Macau', groupKey: 'commonAsia' },
+  { value: 'Asia/Urumqi', countryZh: '中国', countryEn: 'China', cityZh: '乌鲁木齐（新疆时间）', cityEn: 'Urumqi (Xinjiang Time)', groupKey: 'commonAsia' },
+  { value: 'Asia/Tokyo', countryZh: '日本', countryEn: 'Japan', cityZh: '东京', cityEn: 'Tokyo', groupKey: 'commonAsia' },
+  { value: 'Asia/Seoul', countryZh: '韩国', countryEn: 'South Korea', cityZh: '首尔', cityEn: 'Seoul', groupKey: 'commonAsia' },
+  { value: 'Asia/Singapore', countryZh: '新加坡', countryEn: 'Singapore', cityZh: '新加坡', cityEn: 'Singapore', groupKey: 'commonAsia' },
+  { value: 'Asia/Kolkata', countryZh: '印度', countryEn: 'India', cityZh: '加尔各答', cityEn: 'Kolkata', groupKey: 'commonAsia' },
+  { value: 'Asia/Dubai', countryZh: '阿联酋', countryEn: 'United Arab Emirates', cityZh: '迪拜', cityEn: 'Dubai', groupKey: 'commonAsia' },
+  { value: 'America/New_York', countryZh: '美国', countryEn: 'United States', cityZh: '纽约（东部时间）', cityEn: 'New York (Eastern Time)', groupKey: 'america' },
+  { value: 'America/Chicago', countryZh: '美国', countryEn: 'United States', cityZh: '芝加哥（中部时间）', cityEn: 'Chicago (Central Time)', groupKey: 'america' },
+  { value: 'America/Denver', countryZh: '美国', countryEn: 'United States', cityZh: '丹佛（山地时间）', cityEn: 'Denver (Mountain Time)', groupKey: 'america' },
+  { value: 'America/Los_Angeles', countryZh: '美国', countryEn: 'United States', cityZh: '洛杉矶（太平洋时间）', cityEn: 'Los Angeles (Pacific Time)', groupKey: 'america' },
+  { value: 'America/Anchorage', countryZh: '美国', countryEn: 'United States', cityZh: '安克雷奇（阿拉斯加时间）', cityEn: 'Anchorage (Alaska Time)', groupKey: 'america' },
+  { value: 'Pacific/Honolulu', countryZh: '美国', countryEn: 'United States', cityZh: '檀香山 / 火奴鲁鲁（夏威夷时间）', cityEn: 'Honolulu (Hawaii Time)', groupKey: 'america' },
+  { value: 'America/Toronto', countryZh: '加拿大', countryEn: 'Canada', cityZh: '多伦多（东部时间）', cityEn: 'Toronto (Eastern Time)', groupKey: 'america' },
+  { value: 'America/Vancouver', countryZh: '加拿大', countryEn: 'Canada', cityZh: '温哥华（太平洋时间）', cityEn: 'Vancouver (Pacific Time)', groupKey: 'america' },
+  { value: 'America/Sao_Paulo', countryZh: '巴西', countryEn: 'Brazil', cityZh: '圣保罗', cityEn: 'Sao Paulo', groupKey: 'america' },
+  { value: 'Europe/London', countryZh: '英国', countryEn: 'United Kingdom', cityZh: '伦敦（格林威治 / 夏令时）', cityEn: 'London (GMT / BST)', groupKey: 'europeAfrica' },
+  { value: 'Europe/Paris', countryZh: '法国', countryEn: 'France', cityZh: '巴黎（中欧时间）', cityEn: 'Paris (Central European Time)', groupKey: 'europeAfrica' },
+  { value: 'Europe/Berlin', countryZh: '德国', countryEn: 'Germany', cityZh: '柏林（中欧时间）', cityEn: 'Berlin (Central European Time)', groupKey: 'europeAfrica' },
+  { value: 'Europe/Rome', countryZh: '意大利', countryEn: 'Italy', cityZh: '罗马（中欧时间）', cityEn: 'Rome (Central European Time)', groupKey: 'europeAfrica' },
+  { value: 'Europe/Moscow', countryZh: '俄罗斯', countryEn: 'Russia', cityZh: '莫斯科', cityEn: 'Moscow', groupKey: 'europeAfrica' },
+  { value: 'Africa/Johannesburg', countryZh: '南非', countryEn: 'South Africa', cityZh: '约翰内斯堡', cityEn: 'Johannesburg', groupKey: 'europeAfrica' },
+  { value: 'Africa/Cairo', countryZh: '埃及', countryEn: 'Egypt', cityZh: '开罗', cityEn: 'Cairo', groupKey: 'europeAfrica' },
+  { value: 'Australia/Sydney', countryZh: '澳大利亚', countryEn: 'Australia', cityZh: '悉尼（东部时间）', cityEn: 'Sydney (Eastern Time)', groupKey: 'oceania' },
+  { value: 'Australia/Adelaide', countryZh: '澳大利亚', countryEn: 'Australia', cityZh: '阿德莱德（中部时间）', cityEn: 'Adelaide (Central Time)', groupKey: 'oceania' },
+  { value: 'Australia/Perth', countryZh: '澳大利亚', countryEn: 'Australia', cityZh: '珀斯（西部时间）', cityEn: 'Perth (Western Time)', groupKey: 'oceania' },
+  { value: 'Pacific/Auckland', countryZh: '新西兰', countryEn: 'New Zealand', cityZh: '奥克兰', cityEn: 'Auckland', groupKey: 'oceania' },
+  { value: 'UTC', countryZh: '协调世界时', countryEn: 'Coordinated Universal Time', cityZh: '全球（UTC）', cityEn: 'Global (UTC)', groupKey: 'utc' },
 ];
 
+function formatUtcOffset(offsetMinutes: number): string {
+  const sign = offsetMinutes >= 0 ? '+' : '-';
+  const absolute = Math.abs(offsetMinutes);
+  const hours = String(Math.floor(absolute / 60)).padStart(2, '0');
+  const minutes = String(absolute % 60).padStart(2, '0');
+  return `UTC${sign}${hours}:${minutes}`;
+}
+
+function getZonePieces(zoneValue: string, locale: Locale) {
+  const entry = timezoneDatabase.find((z) => z.value === zoneValue);
+  if (!entry) {
+    return null;
+  }
+
+  const country = locale === 'en' ? entry.countryEn : entry.countryZh;
+  const city = locale === 'en' ? entry.cityEn : entry.cityZh;
+  return { entry, country, city };
+}
+
+function getErrorMessage(error: unknown): string | undefined {
+  return error instanceof Error ? error.message : undefined;
+}
+
 // Get standard list of IANA timezones mapped with country details
-export function getAvailableTimezones(): CountryTimezone[] {
-  return timezoneDatabase.map(z => {
+export function getAvailableTimezones(locale: Locale = 'zh'): CountryTimezone[] {
+  return timezoneDatabase.map((z) => {
     try {
       const dt = DateTime.now().setZone(z.value);
-      const offset = dt.toFormat('ZZZ');
+      const offset = formatUtcOffset(dt.offset);
       const offsetName = dt.offsetNameShort || '';
-      const label = `${z.country} - ${z.city} (${offsetName ? offsetName + ', ' : ''}UTC${offset})`;
+      const country = locale === 'en' ? z.countryEn : z.countryZh;
+      const city = locale === 'en' ? z.cityEn : z.cityZh;
+      const group = translate(locale, `timezone.groups.${z.groupKey}`);
+      const label = `${country} - ${city} (${offsetName ? `${offsetName}, ` : ''}${offset})`;
       return {
         value: z.value,
         label,
-        country: z.country,
-        city: z.city,
-        group: z.group,
-        searchText: `${z.country} ${z.city} ${z.value}`.toLowerCase()
+        country,
+        city,
+        group,
+        searchText: `${z.countryZh} ${z.countryEn} ${z.cityZh} ${z.cityEn} ${z.value}`.toLowerCase(),
       };
     } catch {
+      const country = locale === 'en' ? z.countryEn : z.countryZh;
+      const city = locale === 'en' ? z.cityEn : z.cityZh;
       return {
         value: z.value,
-        label: `${z.country} - ${z.city} (${z.value})`,
-        country: z.country,
-        city: z.city,
-        group: z.group,
-        searchText: `${z.country} ${z.city} ${z.value}`.toLowerCase()
+        label: `${country} - ${city} (${z.value})`,
+        country,
+        city,
+        group: translate(locale, `timezone.groups.${z.groupKey}`),
+        searchText: `${z.countryZh} ${z.countryEn} ${z.cityZh} ${z.cityEn} ${z.value}`.toLowerCase(),
       };
     }
   });
 }
 
 // Get user-friendly timezone name by IANA ID
-export function getFriendlyZoneLabel(zoneValue: string): string {
-  const dbItem = timezoneDatabase.find(z => z.value === zoneValue);
-  if (!dbItem) return zoneValue;
+export function getFriendlyZoneLabel(zoneValue: string, locale: Locale = 'zh'): string {
+  const zone = getZonePieces(zoneValue, locale);
+  if (!zone) return zoneValue;
   try {
     const dt = DateTime.now().setZone(zoneValue);
-    const offset = dt.toFormat('ZZZ');
+    const offset = formatUtcOffset(dt.offset);
     const offsetName = dt.offsetNameShort || '';
-    return `${dbItem.country} - ${dbItem.city} (${offsetName ? offsetName + ', ' : ''}UTC${offset})`;
+    return `${zone.country} - ${zone.city} (${offsetName ? `${offsetName}, ` : ''}${offset})`;
   } catch {
-    return `${dbItem.country} - ${dbItem.city} (${zoneValue})`;
+    return `${zone.country} - ${zone.city} (${zoneValue})`;
   }
 }
 
+export function getZoneShortLabel(zoneValue: string, locale: Locale = 'zh'): string {
+  const zone = getZonePieces(zoneValue, locale);
+  if (!zone) return zoneValue;
+  return `${zone.country} ${zone.city}`;
+}
+
 // Get details of a DateTime object
-function getDateResult(dt: DateTime): DateResult {
+function getDateResult(dt: DateTime, locale: Locale): DateResult {
   return {
     dateStr: dt.toFormat('yyyy-MM-dd'),
-    weekday: dt.setLocale('zh-CN').toFormat('cccc'),
+    weekday: dt.setLocale(locale === 'en' ? 'en-US' : 'zh-CN').toFormat('cccc'),
     isDst: dt.isInDST,
-    offsetName: dt.offsetNameShort || (dt.offset >= 0 ? `UTC+${dt.offset/60}` : `UTC${dt.offset/60}`),
+    offsetName: dt.offsetNameShort || formatUtcOffset(dt.offset),
     offsetHours: dt.offset / 60,
   };
 }
@@ -165,7 +210,8 @@ export function convertLunarToSolar(
   year: number,
   month: number,
   day: number,
-  isLeap: boolean
+  isLeap: boolean,
+  locale: Locale = 'zh',
 ): { success: boolean; dateStr?: string; error?: string } {
   try {
     const lunar = Lunar.fromYmd(year, isLeap ? -month : month, day);
@@ -175,8 +221,8 @@ export function convertLunarToSolar(
       success: true,
       dateStr: solar.toYmd(),
     };
-  } catch (e: any) {
-    return { success: false, error: e.message || '转换出错，请检查农历日期是否存在' };
+  } catch (error: unknown) {
+    return { success: false, error: getErrorMessage(error) || translate(locale, 'lunar.invalidLunar') };
   }
 }
 
@@ -191,18 +237,19 @@ export function calculateOffset(
   startDateStr: string,
   offset: number,
   mode: 'thDay' | 'interval',
-  zone: string
+  zone: string,
+  locale: Locale = 'zh',
 ): { success: boolean; result?: DateResult; error?: string } {
   try {
     const start = DateTime.fromISO(startDateStr, { zone });
     if (!start.isValid) {
-      return { success: false, error: '无效的起始日期' };
+      return { success: false, error: translate(locale, 'offset.invalidDate') };
     }
 
     let target: DateTime;
     if (mode === 'thDay') {
       if (offset < 1) {
-        return { success: false, error: '「第 X 日」模式下，X 必须大于等于 1' };
+        return { success: false, error: translate(locale, 'offset.thDayMinimum') };
       }
       target = start.plus({ days: offset - 1 });
     } else {
@@ -211,10 +258,10 @@ export function calculateOffset(
 
     return {
       success: true,
-      result: getDateResult(target),
+      result: getDateResult(target, locale),
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || '计算出错' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) || translate(locale, 'lunar.offsetError') };
   }
 }
 
@@ -242,14 +289,15 @@ export function calculateInterval(
   endDateStr: string,
   inclusion: 'both' | 'start' | 'end' | 'exclude',
   startZone: string,
-  endZone: string
+  endZone: string,
+  locale: Locale = 'zh',
 ): { success: boolean; result?: IntervalResult; error?: string } {
   try {
     const startLocal = DateTime.fromISO(startDateStr, { zone: startZone });
     const endLocal = DateTime.fromISO(endDateStr, { zone: endZone });
 
     if (!startLocal.isValid || !endLocal.isValid) {
-      return { success: false, error: '起始日期或结束日期无效' };
+      return { success: false, error: translate(locale, 'interval.errorPlaceholder') };
     }
 
     // 1. Local Calendar Day Difference
@@ -318,17 +366,17 @@ export function calculateInterval(
       success: true,
       result: {
         totalDays: isNegative ? -totalDays : totalDays,
-        workdays: isNegative ? -workdays : workdays,
-        weekends: isNegative ? -weekends : weekends,
+        workdays,
+        weekends,
         isNegative,
-        actualStart: getDateResult(startLocal.startOf('day')),
-        actualEnd: getDateResult(endLocal.startOf('day')),
+        actualStart: getDateResult(startLocal.startOf('day'), locale),
+        actualEnd: getDateResult(endLocal.startOf('day'), locale),
         absoluteDays,
         absoluteHours,
       }
     };
-  } catch (err: any) {
-    return { success: false, error: err.message || '计算出错' };
+  } catch (err: unknown) {
+    return { success: false, error: getErrorMessage(err) || translate(locale, 'interval.invalid') };
   }
 }
 
@@ -338,7 +386,8 @@ export function calculateInterval(
 export function detectDstTransitions(
   startDateStr: string,
   endDateStr: string,
-  zone: string
+  zone: string,
+  locale: Locale = 'zh',
 ): DstTransition[] {
   const transitions: DstTransition[] = [];
   try {
@@ -375,19 +424,15 @@ export function detectDstTransitions(
         const isForward = shiftMinutes > 0;
 
         const dateStr = current.toFormat('yyyy-MM-dd');
-        
-        let description = '';
-        if (isForward) {
-          description = `夏令时开始：时钟向前拨快 ${shiftHours} 小时。这一天少 ${shiftHours} 小时（通常从 2:00 跳到 3:00）。`;
-        } else {
-          description = `夏令时结束：时钟向后拨慢 ${shiftHours} 小时。这一天多 ${shiftHours} 小时（通常从 2:00 重复一次 1:00）。`;
-        }
+        const description = isForward
+          ? translate(locale, 'dst.shiftForward', { hours: shiftHours })
+          : translate(locale, 'dst.shiftBackward', { hours: shiftHours });
 
         transitions.push({
           date: dateStr,
           type: isForward ? 'forward' : 'backward',
-          fromOffsetName: prevOffsetName || (prevOffset >= 0 ? `UTC+${prevOffset/60}` : `UTC${prevOffset/60}`),
-          toOffsetName: currOffsetName || (currOffset >= 0 ? `UTC+${currOffset/60}` : `UTC${currOffset/60}`),
+          fromOffsetName: prevOffsetName || formatUtcOffset(prevOffset),
+          toOffsetName: currOffsetName || formatUtcOffset(currOffset),
           shiftMinutes,
           description,
         });

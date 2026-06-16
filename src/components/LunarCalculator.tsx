@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Plus, CalendarRange, Info } from 'lucide-react';
 import { Solar } from 'lunar-javascript';
 import { TimezoneSelect } from './TimezoneSelect';
-import { getLunarDetails, convertLunarToSolar, calculateOffset, getFriendlyZoneLabel } from '../utils/dateUtils';
+import { getLunarDetails, convertLunarToSolar, calculateOffset, getZoneShortLabel } from '../utils/dateUtils';
 import type { LunarResult } from '../utils/dateUtils';
 import { DateTime } from 'luxon';
+import { usePreferences } from '../context/usePreferences';
 
 // Traditional Chinese Month Names
 const LUNAR_MONTHS = [
@@ -36,6 +37,7 @@ const LUNAR_DAYS = [
 const years = Array.from({ length: 131 }, (_, i) => 1950 + i);
 
 export const LunarCalculator: React.FC = () => {
+  const { locale, t } = usePreferences();
   // Initialize timezone locally
   const [zone, setZone] = useState(() => {
     try {
@@ -89,84 +91,94 @@ export const LunarCalculator: React.FC = () => {
   const [offsetStr, setOffsetStr] = useState('10');
   const [mode, setMode] = useState<'thDay' | 'interval'>('interval');
 
-  // Outputs
-  const [startSolarDate, setStartSolarDate] = useState<string>('');
-  const [startLunarDetails, setStartLunarDetails] = useState<LunarResult | null>(null);
-  const [targetSolarDate, setTargetSolarDate] = useState<string>('');
-  const [targetLunarDetails, setTargetLunarDetails] = useState<LunarResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const availableDays = useMemo(() => {
+    return Array.from({ length: 30 }, (_, index) => index + 1).filter((candidate) => {
+      return convertLunarToSolar(year, month, candidate, isLeap, locale).success;
+    });
+  }, [year, month, isLeap, locale]);
 
-  // Recalculate
-  useEffect(() => {
-    setError(null);
-    setStartLunarDetails(null);
-    setTargetLunarDetails(null);
+  const effectiveDay = useMemo(() => {
+    if (availableDays.length === 0) {
+      return day;
+    }
+    return availableDays.includes(day) ? day : availableDays[availableDays.length - 1];
+  }, [availableDays, day]);
 
+  const { startSolarDate, startLunarDetails, targetSolarDate, targetLunarDetails, error } = useMemo<{
+    startSolarDate: string;
+    startLunarDetails: LunarResult | null;
+    targetSolarDate: string;
+    targetLunarDetails: LunarResult | null;
+    error: string | null;
+  }>(() => {
     const offset = parseInt(offsetStr, 10);
     if (isNaN(offset)) {
-      setError('请输入向后计算的有效天数');
-      return;
+      return {
+        startSolarDate: '',
+        startLunarDetails: null,
+        targetSolarDate: '',
+        targetLunarDetails: null,
+        error: t('lunar.error'),
+      };
     }
 
     // 1. Convert start lunar date to solar date
-    const conv = convertLunarToSolar(year, month, day, isLeap);
+    const conv = convertLunarToSolar(year, month, effectiveDay, isLeap, locale);
     if (!conv.success || !conv.dateStr) {
-      setError(conv.error || '该农历日期在此年份不存在，请检查是否输入了错误的闰月或大/小月天数');
-      return;
+      return {
+        startSolarDate: '',
+        startLunarDetails: null,
+        targetSolarDate: '',
+        targetLunarDetails: null,
+        error: conv.error || t('lunar.invalidLunar'),
+      };
     }
-
-    setStartSolarDate(conv.dateStr);
 
     // Fetch start date lunar details
     const startDetails = getLunarDetails(conv.dateStr, zone);
-    setStartLunarDetails(startDetails);
 
     // 2. Add offset to the converted solar date
-    const calc = calculateOffset(conv.dateStr, offset, mode, zone);
+    const calc = calculateOffset(conv.dateStr, offset, mode, zone, locale);
     if (!calc.success || !calc.result) {
-      setError(calc.error || '天数偏移计算出错');
-      return;
+      return {
+        startSolarDate: conv.dateStr,
+        startLunarDetails: startDetails,
+        targetSolarDate: '',
+        targetLunarDetails: null,
+        error: calc.error || t('lunar.offsetError'),
+      };
     }
-
-    setTargetSolarDate(calc.result.dateStr);
 
     // 3. Convert target solar date back to lunar details
     const targetDetails = getLunarDetails(calc.result.dateStr, zone);
-    setTargetLunarDetails(targetDetails);
 
-  }, [year, month, day, isLeap, offsetStr, mode, zone]);
-
-  // Sync year/month/day with current date on first mount
-  useEffect(() => {
-    try {
-      const todayStr = DateTime.now().setZone(zone).toFormat('yyyy-MM-dd');
-      const details = getLunarDetails(todayStr, zone);
-      if (details) {
-        // Parse lunarStr to approximate values if needed, but since lunar-javascript returns objects under the hood,
-        // we can extract details from l-j directly.
-        // For simplicity, we just initialize to 2026 (丙午马年) as the baseline.
-      }
-    } catch {}
-  }, [zone]);
+    return {
+      startSolarDate: conv.dateStr,
+      startLunarDetails: startDetails,
+      targetSolarDate: calc.result.dateStr,
+      targetLunarDetails: targetDetails,
+      error: null,
+    };
+  }, [year, month, effectiveDay, isLeap, offsetStr, mode, zone, locale, t]);
 
   return (
     <div className="calculator-grid fade-in">
       {/* Form section */}
       <div className="form-section">
         <div className="form-group">
-          <label className="form-label">基准时区</label>
+          <label className="form-label">{t('lunar.baseZone')}</label>
           <TimezoneSelect value={zone} onChange={setZone} />
         </div>
 
         {/* Lunar Date Picker */}
-        <div style={{ border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 'var(--radius-sm)', padding: '15px', background: 'rgba(0, 0, 0, 0.1)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '15px', background: 'var(--surface-raised)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>●</span> 起始农历日期
+            <span>●</span> {t('lunar.startTitle')}
           </h3>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.75rem' }}>农历年份</label>
+              <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('lunar.year')}</label>
               <select 
                 className="form-input" 
                 style={{ paddingLeft: '12px' }}
@@ -174,13 +186,13 @@ export const LunarCalculator: React.FC = () => {
                 onChange={e => setYear(parseInt(e.target.value, 10))}
               >
                 {years.map(y => (
-                  <option key={y} value={y} style={{ background: '#121225' }}>{y}年</option>
+                  <option key={y} value={y}>{locale === 'zh' ? `${y}年` : y}</option>
                 ))}
               </select>
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.75rem' }}>农历月份</label>
+              <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('lunar.month')}</label>
               <select 
                 className="form-input" 
                 style={{ paddingLeft: '12px' }}
@@ -188,22 +200,30 @@ export const LunarCalculator: React.FC = () => {
                 onChange={e => setMonth(parseInt(e.target.value, 10))}
               >
                 {LUNAR_MONTHS.map(m => (
-                  <option key={m.value} value={m.value} style={{ background: '#121225' }}>{m.label}</option>
+                  <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
               </select>
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.75rem' }}>农历日期</label>
+              <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('lunar.day')}</label>
               <select 
                 className="form-input" 
                 style={{ paddingLeft: '12px' }}
-                value={day}
+                value={availableDays.length === 0 ? '' : effectiveDay}
                 onChange={e => setDay(parseInt(e.target.value, 10))}
+                disabled={availableDays.length === 0}
               >
-                {LUNAR_DAYS.map(d => (
-                  <option key={d.value} value={d.value} style={{ background: '#121225' }}>{d.label}</option>
-                ))}
+                {availableDays.length === 0 ? (
+                  <option value="">{t('lunar.invalidLunar')}</option>
+                ) : (
+                  availableDays.map((dayValue) => {
+                    const dayLabel = LUNAR_DAYS.find((d) => d.value === dayValue)?.label || String(dayValue);
+                    return (
+                      <option key={dayValue} value={dayValue}>{dayLabel}</option>
+                    );
+                  })
+                )}
               </select>
             </div>
           </div>
@@ -217,40 +237,40 @@ export const LunarCalculator: React.FC = () => {
               style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--accent-primary)' }}
             />
             <label htmlFor="isLeap" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-              此月是闰月 (例如：闰四月)
+              {t('lunar.leapMonth')}
             </label>
           </div>
 
           {startSolarDate && startLunarDetails && (
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '10px', borderRadius: '4px', border: '1px dashed rgba(255, 255, 255, 0.05)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              <div>对应公历：<strong>{startSolarDate}</strong></div>
-              <div>干支生肖：{startLunarDetails.yearGanZhi}年 ({startLunarDetails.shengXiao}年)</div>
+            <div style={{ background: 'var(--surface-raised)', padding: '10px', borderRadius: '4px', border: '1px dashed var(--border-subtle)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <div>{t('lunar.startSolar')}：<strong>{startSolarDate}</strong></div>
+              <div>{t('lunar.ganzhi')}：{startLunarDetails.yearGanZhi} · {startLunarDetails.shengXiao}</div>
             </div>
           )}
         </div>
 
         <div className="form-group">
-          <label className="form-label">模式选择</label>
+          <label className="form-label">{t('lunar.mode')}</label>
           <div className="segmented-control">
             <button
               type="button"
               className={`segmented-btn ${mode === 'interval' ? 'active' : ''}`}
               onClick={() => setMode('interval')}
             >
-              间隔 X 日 (D + X)
+              {t('lunar.intervalMode')}
             </button>
             <button
               type="button"
               className={`segmented-btn ${mode === 'thDay' ? 'active' : ''}`}
               onClick={() => setMode('thDay')}
             >
-              第 X 日 (D + X - 1)
+              {t('lunar.thDayMode')}
             </button>
           </div>
         </div>
 
         <div className="form-group">
-          <label className="form-label">天数偏移 (X)</label>
+          <label className="form-label">{t('lunar.amount')}</label>
           <div className="input-icon-wrapper">
             <Plus className="input-icon" size={18} />
             <input
@@ -274,32 +294,34 @@ export const LunarCalculator: React.FC = () => {
         ) : !targetLunarDetails ? (
           <div className="results-placeholder">
             <CalendarRange className="placeholder-icon" size={48} />
-            <p>请选择农历日期并开始计算</p>
+            <p>{t('lunar.selectPrompt')}</p>
           </div>
         ) : (
           <div className="results-content">
             {/* Target Gregorian Date */}
             <div>
-              <div className="result-card-heading">公历对应日期</div>
+              <div className="result-card-heading">{t('lunar.targetSolar')}</div>
               <div style={{ marginTop: '10px' }}>
                 <div className="big-date-display">{targetSolarDate}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '6px' }}>
-                  <span className="meta-pill">周{targetSolarDate ? DateTime.fromISO(targetSolarDate).setLocale('zh-CN').toFormat('ccc') : ''}</span>
-                  <span className="meta-pill">{getFriendlyZoneLabel(zone).split(' - ')[1] || zone}</span>
+                  <span className="meta-pill">
+                    {targetSolarDate ? DateTime.fromISO(targetSolarDate).setLocale(locale === 'en' ? 'en-US' : 'zh-CN').toFormat('ccc') : ''}
+                  </span>
+                  <span className="meta-pill">{getZoneShortLabel(zone, locale)}</span>
                 </div>
               </div>
             </div>
 
             {/* Target Lunar Date */}
-            <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '15px' }}>
-              <div className="result-card-heading">农历计算结果</div>
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '15px' }}>
+              <div className="result-card-heading">{t('lunar.targetLunar')}</div>
               <div style={{ textAlign: 'center', margin: '12px 0' }}>
                 <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-primary)', textShadow: '0 0 10px rgba(99, 102, 241, 0.2)' }}>
                   {targetLunarDetails.lunarStr}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                  <span className="meta-pill">{targetLunarDetails.yearGanZhi}年</span>
-                  <span className="meta-pill">属{targetLunarDetails.shengXiao}</span>
+                  <span className="meta-pill">{targetLunarDetails.yearGanZhi}</span>
+                  <span className="meta-pill">{t('lunar.zodiacLabel')}{targetLunarDetails.shengXiao}</span>
                   {targetLunarDetails.jieQi && (
                     <span className="meta-pill" style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)', background: 'rgba(16, 185, 129, 0.05)' }}>
                       {targetLunarDetails.jieQi}
@@ -315,17 +337,17 @@ export const LunarCalculator: React.FC = () => {
             </div>
 
             {/* Almanac Daily Yi & Ji (黄历宜忌) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '15px' }}>
-              <div style={{ background: 'rgba(16, 185, 129, 0.04)', border: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: 'var(--radius-sm)', padding: '10px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-success)', borderBottom: '1px solid rgba(16, 185, 129, 0.1)', paddingBottom: '4px', marginBottom: '6px' }}>
-                  宜 (Auspicious)
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', borderTop: '1px solid var(--border-subtle)', paddingTop: '15px' }}>
+              <div style={{ background: 'var(--surface-raised)', border: '1px solid color-mix(in srgb, var(--color-success) 18%, var(--border-subtle))', borderRadius: 'var(--radius-sm)', padding: '10px' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-success)', borderBottom: '1px solid color-mix(in srgb, var(--color-success) 18%, var(--border-subtle))', paddingBottom: '4px', marginBottom: '6px' }}>
+                  {t('lunar.auspicious')}
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                   {targetLunarDetails.yi.length === 0 ? (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>诸事不宜</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('lunar.noAuspicious')}</span>
                   ) : (
                     targetLunarDetails.yi.slice(0, 8).map(y => (
-                      <span key={y} style={{ fontSize: '0.75rem', background: 'rgba(16, 185, 129, 0.08)', padding: '2px 6px', borderRadius: '4px', color: 'var(--color-success)' }}>
+                      <span key={y} style={{ fontSize: '0.75rem', background: 'color-mix(in srgb, var(--color-success) 12%, var(--surface-raised))', padding: '2px 6px', borderRadius: '4px', color: 'var(--color-success)' }}>
                         {y}
                       </span>
                     ))
@@ -333,16 +355,16 @@ export const LunarCalculator: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ background: 'rgba(239, 68, 68, 0.04)', border: '1px solid rgba(239, 68, 68, 0.1)', borderRadius: 'var(--radius-sm)', padding: '10px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-error)', borderBottom: '1px solid rgba(239, 68, 68, 0.1)', paddingBottom: '4px', marginBottom: '6px' }}>
-                  忌 (Inauspicious)
+              <div style={{ background: 'var(--surface-raised)', border: '1px solid color-mix(in srgb, var(--color-error) 18%, var(--border-subtle))', borderRadius: 'var(--radius-sm)', padding: '10px' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-error)', borderBottom: '1px solid color-mix(in srgb, var(--color-error) 18%, var(--border-subtle))', paddingBottom: '4px', marginBottom: '6px' }}>
+                  {t('lunar.inauspicious')}
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                   {targetLunarDetails.ji.length === 0 ? (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>诸事无忌</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('lunar.noInauspicious')}</span>
                   ) : (
                     targetLunarDetails.ji.slice(0, 8).map(j => (
-                      <span key={j} style={{ fontSize: '0.75rem', background: 'rgba(239, 68, 68, 0.08)', padding: '2px 6px', borderRadius: '4px', color: 'var(--color-error)' }}>
+                      <span key={j} style={{ fontSize: '0.75rem', background: 'color-mix(in srgb, var(--color-error) 12%, var(--surface-raised))', padding: '2px 6px', borderRadius: '4px', color: 'var(--color-error)' }}>
                         {j}
                       </span>
                     ))

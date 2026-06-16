@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Calendar, Plus, CalendarRange } from 'lucide-react';
-import { calculateOffset, detectDstTransitions, getLunarDetails } from '../utils/dateUtils';
+import { calculateOffset, detectDstTransitions, getLunarDetails, getZoneShortLabel } from '../utils/dateUtils';
 import type { DateResult, DstTransition } from '../utils/dateUtils';
 import { TimezoneSelect } from './TimezoneSelect';
 import { DstAuditor } from './DstAuditor';
 import { RangeVisualizer } from './RangeVisualizer';
 import { DateTime } from 'luxon';
+import { usePreferences } from '../context/usePreferences';
 
 export const OffsetCalculator: React.FC = () => {
+  const { locale, t } = usePreferences();
   // Initialize timezone state locally to browser's default or Asia/Shanghai
   const [zone, setZone] = useState(() => {
     try {
@@ -23,46 +25,29 @@ export const OffsetCalculator: React.FC = () => {
   const [offsetStr, setOffsetStr] = useState('10');
   const [mode, setMode] = useState<'thDay' | 'interval'>('interval');
   
-  const [result, setResult] = useState<DateResult | null>(null);
-  const [transitions, setTransitions] = useState<DstTransition[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  // Sync starting date if the timezone changes
-  useEffect(() => {
-    if (!startDate) {
-      setStartDate(getTodayStr(zone));
-    }
-  }, [zone]);
-
-  // Recalculate whenever inputs change
-  useEffect(() => {
-    setError(null);
+  const { result, transitions, error } = useMemo<{
+    result: DateResult | null;
+    transitions: DstTransition[];
+    error: string | null;
+  }>(() => {
     const offset = parseInt(offsetStr, 10);
 
     if (!startDate) {
-      setResult(null);
-      setTransitions([]);
-      return;
+      return { result: null, transitions: [], error: null };
     }
 
     if (isNaN(offset)) {
-      setError('请输入有效的数字');
-      setResult(null);
-      setTransitions([]);
-      return;
+      return { result: null, transitions: [], error: t('offset.invalidNumber') };
     }
 
-    const calc = calculateOffset(startDate, offset, mode, zone);
+    const calc = calculateOffset(startDate, offset, mode, zone, locale);
     if (calc.success && calc.result) {
-      setResult(calc.result);
-      const dst = detectDstTransitions(startDate, calc.result.dateStr, zone);
-      setTransitions(dst);
-    } else {
-      setError(calc.error || '计算出错');
-      setResult(null);
-      setTransitions([]);
+      const dst = detectDstTransitions(startDate, calc.result.dateStr, zone, locale);
+      return { result: calc.result, transitions: dst, error: null };
     }
-  }, [startDate, offsetStr, mode, zone]);
+
+    return { result: null, transitions: [], error: calc.error || t('offset.invalidCalculation') };
+  }, [startDate, offsetStr, mode, zone, locale, t]);
 
   const handleOffsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOffsetStr(e.target.value);
@@ -73,12 +58,12 @@ export const OffsetCalculator: React.FC = () => {
       {/* Form controls */}
       <div className="form-section">
         <div className="form-group">
-          <label className="form-label">基准时区</label>
+          <label className="form-label">{t('offset.baseZone')}</label>
           <TimezoneSelect value={zone} onChange={setZone} />
         </div>
 
         <div className="form-group">
-          <label className="form-label">起始日期</label>
+          <label className="form-label">{t('offset.startDate')}</label>
           <div className="input-icon-wrapper">
             <Calendar className="input-icon" size={18} />
             <input
@@ -92,39 +77,37 @@ export const OffsetCalculator: React.FC = () => {
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', paddingLeft: '4px', marginTop: '2px' }}>
               {(() => {
                 const details = getLunarDetails(startDate, zone);
-                return details ? `农历：${details.lunarStr} (${details.yearGanZhi}${details.shengXiao}年)` : '';
+                return details ? `${t('offset.lunarTitle')}：${details.lunarStr} (${details.yearGanZhi} · ${details.shengXiao})` : '';
               })()}
             </span>
           )}
         </div>
 
         <div className="form-group">
-          <label className="form-label">模式选择</label>
+          <label className="form-label">{t('offset.mode')}</label>
           <div className="segmented-control">
             <button
               type="button"
               className={`segmented-btn ${mode === 'interval' ? 'active' : ''}`}
               onClick={() => setMode('interval')}
             >
-              间隔 X 日 (D + X)
+              {t('offset.intervalMode')}
             </button>
             <button
               type="button"
               className={`segmented-btn ${mode === 'thDay' ? 'active' : ''}`}
               onClick={() => setMode('thDay')}
             >
-              第 X 日 (D + X - 1)
+              {t('offset.thDayMode')}
             </button>
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '4px' }}>
-            {mode === 'interval' 
-              ? '「间隔 X 日」：从起始日算起，跨越 X 天。例如 6月1日 间隔 2天 是 6月3日。'
-              : '「第 X 日」：起始日算作第 1 天。例如 6月1日 的第 2 天是 6月2日（要求 X ≥ 1）。'}
+            {mode === 'interval' ? t('offset.intervalHelp') : t('offset.thDayHelp')}
           </span>
         </div>
 
         <div className="form-group">
-          <label className="form-label">向后计算天数 (X)</label>
+          <label className="form-label">{t('offset.amount')}</label>
           <div className="input-icon-wrapper">
             <Plus className="input-icon" size={18} />
             <input
@@ -148,30 +131,30 @@ export const OffsetCalculator: React.FC = () => {
         ) : !result ? (
           <div className="results-placeholder">
             <CalendarRange className="placeholder-icon" size={48} />
-            <p>请输入有效参数开始计算</p>
+            <p>{t('offset.placeholder')}</p>
           </div>
         ) : (
           <div className="results-content">
             <div>
-              <div className="result-card-heading">计算结果</div>
+              <div className="result-card-heading">{t('offset.resultTitle')}</div>
               <div style={{ marginTop: '15px' }}>
                 <div className="big-date-display">{result.dateStr}</div>
                 <div className="date-meta-info">
                   <span className="meta-pill">{result.weekday}</span>
                   <span className="meta-pill">UTC{result.offsetHours >= 0 ? `+${result.offsetHours}` : result.offsetHours} ({result.offsetName})</span>
-                  {result.isDst && <span className="meta-pill dst-active">夏令时中</span>}
+                  {result.isDst && <span className="meta-pill dst-active">{t('offset.dstActive')}</span>}
                 </div>
                 {(() => {
                   const details = getLunarDetails(result.dateStr, zone);
                   if (!details) return null;
                   return (
-                    <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', borderTop: '1px dashed rgba(255, 255, 255, 0.05)', paddingTop: '12px' }}>
+                    <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', borderTop: '1px dashed var(--border-subtle)', paddingTop: '12px' }}>
                       <div style={{ fontSize: '1.25rem', color: 'var(--accent-primary)', fontWeight: 700 }}>
-                        农历 {details.lunarStr}
+                        {t('offset.lunarTitle')} {details.lunarStr}
                       </div>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <span className="meta-pill">{details.yearGanZhi}年</span>
-                        <span className="meta-pill">属{details.shengXiao}</span>
+                        <span className="meta-pill">{details.yearGanZhi}</span>
+                        <span className="meta-pill">{t('lunar.zodiacLabel')}{details.shengXiao}</span>
                         {details.jieQi && (
                           <span className="meta-pill" style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)', background: 'rgba(16, 185, 129, 0.05)' }}>
                             {details.jieQi}
@@ -195,9 +178,10 @@ export const OffsetCalculator: React.FC = () => {
               totalDays={parseInt(offsetStr, 10) * (mode === 'thDay' ? 1 : 1) - (mode === 'thDay' ? 1 : 0)} 
               startZone={zone}
               endZone={zone}
+              locale={locale}
             />
 
-            <DstAuditor transitions={transitions} zone={zone} />
+            <DstAuditor transitions={transitions} zone={zone} zoneLabel={getZoneShortLabel(zone, locale)} />
           </div>
         )}
       </div>

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Globe, ChevronDown, Check } from 'lucide-react';
 import { getAvailableTimezones } from '../utils/dateUtils';
 import type { CountryTimezone } from '../utils/dateUtils';
+import { usePreferences } from '../context/usePreferences';
 
 interface TimezoneSelectProps {
   value: string;
@@ -12,30 +13,28 @@ export const TimezoneSelect: React.FC<TimezoneSelectProps> = ({ value, onChange 
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  const allZones = getAvailableTimezones();
+  const listboxId = useId();
+  const { locale, t } = usePreferences();
+
+  const allZones = useMemo(() => getAvailableTimezones(locale), [locale]);
   
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setSearchQuery('');
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Sync search query when value changes or dropdown opens
-  useEffect(() => {
-    const selectedZone = allZones.find(z => z.value === value);
-    setSearchQuery(selectedZone ? selectedZone.label : value);
-  }, [value, isOpen]);
+  const selectedZone = allZones.find((z) => z.value === value);
+  const displayValue = isOpen ? searchQuery : selectedZone?.label || value;
 
-  const filteredZones = searchQuery
-    ? allZones.filter(z => 
-        z.searchText.includes(searchQuery.toLowerCase())
-      )
+  const filteredZones = searchQuery.trim()
+    ? allZones.filter((zone) => zone.searchText.includes(searchQuery.toLowerCase()))
     : allZones;
 
   // Group filtered results
@@ -50,6 +49,7 @@ export const TimezoneSelect: React.FC<TimezoneSelectProps> = ({ value, onChange 
   const handleSelect = (zoneValue: string) => {
     onChange(zoneValue);
     setIsOpen(false);
+    setSearchQuery('');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,14 +58,18 @@ export const TimezoneSelect: React.FC<TimezoneSelectProps> = ({ value, onChange 
   };
 
   const handleInputFocus = () => {
-    setSearchQuery(''); // Clear on focus to let them see all options
+    setSearchQuery('');
     setIsOpen(true);
   };
 
-  const selectedZoneLabel = allZones.find(z => z.value === value)?.label || value;
-
   // Ordered groups for display
-  const groupOrder = ['常用与亚洲', '美洲', '欧洲与非洲', '大洋洲', '协调世界时'];
+  const groupOrder = [
+    t('timezone.groups.commonAsia'),
+    t('timezone.groups.america'),
+    t('timezone.groups.europeAfrica'),
+    t('timezone.groups.oceania'),
+    t('timezone.groups.utc'),
+  ];
 
   return (
     <div className="timezone-search-container" ref={containerRef}>
@@ -74,25 +78,42 @@ export const TimezoneSelect: React.FC<TimezoneSelectProps> = ({ value, onChange 
         <input
           type="text"
           className="form-input"
-          placeholder="搜索国家、城市或时区...（例如：中国、伦敦）"
-          value={isOpen ? searchQuery : selectedZoneLabel}
+          placeholder={t('timezone.placeholder')}
+          value={displayValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              setIsOpen(false);
+              setSearchQuery('');
+            }
+          }}
+          aria-expanded={isOpen}
+          aria-autocomplete="list"
+          aria-controls={listboxId}
+          aria-haspopup="listbox"
           style={{ paddingRight: '40px' }}
         />
-        <ChevronDown 
-          size={16} 
-          className="input-icon" 
-          style={{ left: 'auto', right: '14px', cursor: 'pointer', pointerEvents: 'auto' }}
-          onClick={() => setIsOpen(!isOpen)}
-        />
+        <button
+          type="button"
+          className="timezone-chevron-btn"
+          onClick={() => {
+            setIsOpen((current) => !current);
+            if (!isOpen) {
+              setSearchQuery('');
+            }
+          }}
+          aria-label={isOpen ? 'Close timezone menu' : 'Open timezone menu'}
+        >
+          <ChevronDown size={16} className={`timezone-chevron ${isOpen ? 'open' : ''}`} />
+        </button>
       </div>
 
       {isOpen && (
-        <div className="timezone-dropdown">
+        <div className="timezone-dropdown" id={listboxId} role="listbox">
           {Object.keys(groups).length === 0 ? (
-            <div style={{ padding: '12px 14px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              没有找到匹配的地区或时区
+            <div className="timezone-empty-state">
+              {t('timezone.empty')}
             </div>
           ) : (
             groupOrder.map(groupName => {
@@ -103,14 +124,18 @@ export const TimezoneSelect: React.FC<TimezoneSelectProps> = ({ value, onChange 
                 <div key={groupName}>
                   <div className="timezone-group-header">{groupName}</div>
                   {items.map(z => (
-                    <div
+                    <button
+                      type="button"
                       key={z.value}
                       className={`timezone-option ${z.value === value ? 'selected' : ''}`}
+                      onMouseDown={(event) => event.preventDefault()}
                       onClick={() => handleSelect(z.value)}
+                      role="option"
+                      aria-selected={z.value === value}
                     >
                       <span>{z.label}</span>
                       {z.value === value && <Check size={14} className="selected-check" />}
-                    </div>
+                    </button>
                   ))}
                 </div>
               );

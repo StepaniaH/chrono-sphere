@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Calendar, CalendarRange } from 'lucide-react';
-import { calculateInterval, detectDstTransitions, getFriendlyZoneLabel, getLunarDetails } from '../utils/dateUtils';
+import { calculateInterval, detectDstTransitions, getFriendlyZoneLabel, getLunarDetails, getZoneShortLabel } from '../utils/dateUtils';
 import type { IntervalResult } from '../utils/dateUtils';
 import { TimezoneSelect } from './TimezoneSelect';
 import { DstAuditor } from './DstAuditor';
 import type { DstTransitionWithZone } from './DstAuditor';
 import { RangeVisualizer } from './RangeVisualizer';
 import { DateTime } from 'luxon';
+import { usePreferences } from '../context/usePreferences';
 
 export const IntervalCalculator: React.FC = () => {
+  const { locale, t } = usePreferences();
   // Initialize start and end timezones to local timezone or Asia/Shanghai
   const [startZone, setStartZone] = useState(() => {
     try {
@@ -33,44 +35,24 @@ export const IntervalCalculator: React.FC = () => {
   const [endDate, setEndDate] = useState(() => getFutureStr(endZone));
   const [inclusion, setInclusion] = useState<'both' | 'start' | 'end' | 'exclude'>('both');
 
-  const [result, setResult] = useState<IntervalResult | null>(null);
-  const [transitions, setTransitions] = useState<DstTransitionWithZone[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  // Sync date inputs if timezone changes
-  useEffect(() => {
-    if (!startDate) {
-      setStartDate(getTodayStr(startZone));
-    }
-  }, [startZone]);
-
-  useEffect(() => {
-    if (!endDate) {
-      setEndDate(getFutureStr(endZone));
-    }
-  }, [endZone]);
-
-  // Recalculate on input changes
-  useEffect(() => {
-    setError(null);
-    
+  const { result, transitions, error } = useMemo<{
+    result: IntervalResult | null;
+    transitions: DstTransitionWithZone[];
+    error: string | null;
+  }>(() => {
     if (!startDate || !endDate) {
-      setResult(null);
-      setTransitions([]);
-      return;
+      return { result: null, transitions: [], error: null };
     }
 
-    const calc = calculateInterval(startDate, endDate, inclusion, startZone, endZone);
+    const calc = calculateInterval(startDate, endDate, inclusion, startZone, endZone, locale);
     if (calc.success && calc.result) {
-      setResult(calc.result);
-
       // Audit DST transitions in both timezones
-      const dstStart = detectDstTransitions(startDate, endDate, startZone);
-      const dstEnd = startZone !== endZone ? detectDstTransitions(startDate, endDate, endZone) : [];
+      const dstStart = detectDstTransitions(startDate, endDate, startZone, locale);
+      const dstEnd = startZone !== endZone ? detectDstTransitions(startDate, endDate, endZone, locale) : [];
 
       // Combine transitions and tag them with timezone descriptions
-      const startLabel = getFriendlyZoneLabel(startZone).split(' - ')[1] || startZone;
-      const endLabel = getFriendlyZoneLabel(endZone).split(' - ')[1] || endZone;
+      const startLabel = getZoneShortLabel(startZone, locale);
+      const endLabel = getZoneShortLabel(endZone, locale);
 
       const combined: DstTransitionWithZone[] = [
         ...dstStart.map(t => ({ ...t, zoneName: startLabel })),
@@ -86,29 +68,27 @@ export const IntervalCalculator: React.FC = () => {
         return true;
       });
 
-      setTransitions(filteredCombined);
-    } else {
-      setError(calc.error || '计算出错');
-      setResult(null);
-      setTransitions([]);
+      return { result: calc.result, transitions: filteredCombined, error: null };
     }
-  }, [startDate, endDate, inclusion, startZone, endZone]);
+
+    return { result: null, transitions: [], error: calc.error || t('interval.invalid') };
+  }, [startDate, endDate, inclusion, startZone, endZone, locale, t]);
 
   return (
     <div className="calculator-grid fade-in">
       {/* Form controls */}
       <div className="form-section">
         {/* Start Date Configuration */}
-        <div style={{ border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 'var(--radius-sm)', padding: '15px', background: 'rgba(0, 0, 0, 0.1)' }}>
+        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '15px', background: 'var(--surface-raised)' }}>
           <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>●</span> 起始点设置
+            <span>●</span> {t('interval.startConfig')}
           </h3>
           <div className="form-group" style={{ marginBottom: '12px' }}>
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>起始时区 (国家/地区)</label>
+            <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('interval.startZone')}</label>
             <TimezoneSelect value={startZone} onChange={setStartZone} />
           </div>
           <div className="form-group">
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>起始日期</label>
+            <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('interval.startDate')}</label>
             <div className="input-icon-wrapper">
               <Calendar className="input-icon" size={18} />
               <input
@@ -122,7 +102,7 @@ export const IntervalCalculator: React.FC = () => {
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: '4px', marginTop: '2px' }}>
                 {(() => {
                   const d = getLunarDetails(startDate, startZone);
-                  return d ? `农历：${d.lunarStr} (${d.yearGanZhi}${d.shengXiao}年)` : '';
+                  return d ? `${t('offset.lunarTitle')}：${d.lunarStr} (${d.yearGanZhi} · ${d.shengXiao})` : '';
                 })()}
               </span>
             )}
@@ -130,16 +110,16 @@ export const IntervalCalculator: React.FC = () => {
         </div>
 
         {/* End Date Configuration */}
-        <div style={{ border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: 'var(--radius-sm)', padding: '15px', background: 'rgba(0, 0, 0, 0.1)' }}>
+        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '15px', background: 'var(--surface-raised)' }}>
           <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-secondary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>●</span> 结束点设置
+            <span>●</span> {t('interval.endConfig')}
           </h3>
           <div className="form-group" style={{ marginBottom: '12px' }}>
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>结束时区 (国家/地区)</label>
+            <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('interval.endZone')}</label>
             <TimezoneSelect value={endZone} onChange={setEndZone} />
           </div>
           <div className="form-group">
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>结束日期</label>
+            <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('interval.endDate')}</label>
             <div className="input-icon-wrapper">
               <Calendar className="input-icon" size={18} />
               <input
@@ -153,7 +133,7 @@ export const IntervalCalculator: React.FC = () => {
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: '4px', marginTop: '2px' }}>
                 {(() => {
                   const d = getLunarDetails(endDate, endZone);
-                  return d ? `农历：${d.lunarStr} (${d.yearGanZhi}${d.shengXiao}年)` : '';
+                  return d ? `${t('offset.lunarTitle')}：${d.lunarStr} (${d.yearGanZhi} · ${d.shengXiao})` : '';
                 })()}
               </span>
             )}
@@ -162,15 +142,15 @@ export const IntervalCalculator: React.FC = () => {
 
         {/* Inclusion Rules */}
         <div className="form-group">
-          <label className="form-label">包含规则</label>
-          <div className="segmented-control" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px', background: 'rgba(0, 0, 0, 0.25)', padding: '4px' }}>
+          <label className="form-label">{t('interval.inclusion')}</label>
+          <div className="segmented-control" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px', background: 'var(--surface-muted)', padding: '4px' }}>
             <button
               type="button"
               className={`segmented-btn ${inclusion === 'both' ? 'active' : ''}`}
               onClick={() => setInclusion('both')}
               style={{ fontSize: '0.8rem' }}
             >
-              包括首尾日 (+1)
+              {t('interval.both')}
             </button>
             <button
               type="button"
@@ -178,7 +158,7 @@ export const IntervalCalculator: React.FC = () => {
               onClick={() => setInclusion('start')}
               style={{ fontSize: '0.8rem' }}
             >
-              仅包括首日 (+0)
+              {t('interval.startOnly')}
             </button>
             <button
               type="button"
@@ -186,7 +166,7 @@ export const IntervalCalculator: React.FC = () => {
               onClick={() => setInclusion('end')}
               style={{ fontSize: '0.8rem' }}
             >
-              仅包括尾日 (+0)
+              {t('interval.endOnly')}
             </button>
             <button
               type="button"
@@ -194,14 +174,14 @@ export const IntervalCalculator: React.FC = () => {
               onClick={() => setInclusion('exclude')}
               style={{ fontSize: '0.8rem' }}
             >
-              不包括首尾日 (-1)
+              {t('interval.exclude')}
             </button>
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '4px', marginTop: '4px' }}>
-            {inclusion === 'both' && '「包括首尾日」：计算天数包括起始和结束那两天。'}
-            {inclusion === 'start' && '「仅包括首日」：算头不算尾。例如 6月1日 到 6月2日 为 1天。'}
-            {inclusion === 'end' && '「仅包括尾日」：算尾不算头。例如 6月1日 到 6月2日 为 1天。'}
-            {inclusion === 'exclude' && '「不包括首尾日」：仅计算夹在中间的天数。'}
+            {inclusion === 'both' && t('interval.bothHelp')}
+            {inclusion === 'start' && t('interval.startHelp')}
+            {inclusion === 'end' && t('interval.endHelp')}
+            {inclusion === 'exclude' && t('interval.excludeHelp')}
           </span>
         </div>
       </div>
@@ -215,20 +195,20 @@ export const IntervalCalculator: React.FC = () => {
         ) : !result ? (
           <div className="results-placeholder">
             <CalendarRange className="placeholder-icon" size={48} />
-            <p>请选择日期范围开始计算</p>
+            <p>{t('interval.placeholder')}</p>
           </div>
         ) : (
           <div className="results-content">
             <div>
-              <div className="result-card-heading">日历天数差 (Local Calendar Diff)</div>
+              <div className="result-card-heading">{t('interval.calendarDiff')}</div>
               <div className="big-result-wrapper">
                 <span className="big-result-val">
-                  {result.totalDays}
+                  {result.totalDays >= 0 ? result.totalDays : `-${Math.abs(result.totalDays)}`}
                 </span>
-                <span className="big-result-unit">天</span>
+                <span className="big-result-unit">{t('interval.totalDaysUnit')}</span>
                 {result.isNegative && (
                   <div style={{ fontSize: '0.8rem', color: 'var(--color-error)', fontWeight: 600, marginTop: '4px' }}>
-                    （起始日晚于结束日，计算结果为负）
+                    {t('interval.negativeNote')}
                   </div>
                 )}
               </div>
@@ -236,44 +216,44 @@ export const IntervalCalculator: React.FC = () => {
 
             <div className="stats-grid">
               <div className="stat-item">
-                <span className="stat-label">工作日 (周一至周五)</span>
-                <span className="stat-value workday">{result.workdays} 天</span>
+                <span className="stat-label">{t('interval.workdays')}</span>
+                <span className="stat-value workday">{result.workdays} {t('interval.totalDaysUnit')}</span>
               </div>
               <div className="stat-item">
-                <span className="stat-label">双休日 (周六至周日)</span>
-                <span className="stat-value weekend">{result.weekends} 天</span>
+                <span className="stat-label">{t('interval.weekends')}</span>
+                <span className="stat-value weekend">{result.weekends} {t('interval.totalDaysUnit')}</span>
               </div>
             </div>
 
             {/* Absolute elapsed time breakdown */}
-            <div style={{ background: 'rgba(0, 0, 0, 0.15)', border: '1px solid rgba(255, 255, 255, 0.03)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div className="stat-label" style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                跨时区绝对时间差 (从起始日0点到结束日0点实际流逝时间)
+                {t('interval.absoluteTime')}
               </div>
               <div style={{ textAlign: 'center', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--accent-secondary)' }}>
-                {result.absoluteDays} 天 {result.absoluteHours} 小时
+                {t('interval.hoursUnit', { days: result.absoluteDays, hours: result.absoluteHours })}
               </div>
             </div>
 
             {/* Lunar Calendar equivalents */}
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.04)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div className="result-card-heading" style={{ border: 'none', padding: 0, fontSize: '0.75rem', textTransform: 'none', letterSpacing: '0.05em' }}>农历对应信息</div>
+            <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div className="result-card-heading" style={{ border: 'none', padding: 0, fontSize: '0.75rem', textTransform: 'none', letterSpacing: '0.05em' }}>{t('interval.lunarInfo')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>起始农历</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('interval.startLunar')}</span>
                   <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                     {(() => {
                       const d = getLunarDetails(startDate, startZone);
-                      return d ? `${d.lunarStr} (${d.yearGanZhi}${d.shengXiao}年)` : '';
+                      return d ? `${d.lunarStr} (${d.yearGanZhi} · ${d.shengXiao})` : '';
                     })()}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>结束农历</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('interval.endLunar')}</span>
                   <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                     {(() => {
                       const d = getLunarDetails(endDate, endZone);
-                      return d ? `${d.lunarStr} (${d.yearGanZhi}${d.shengXiao}年)` : '';
+                      return d ? `${d.lunarStr} (${d.yearGanZhi} · ${d.shengXiao})` : '';
                     })()}
                   </span>
                 </div>
@@ -286,9 +266,15 @@ export const IntervalCalculator: React.FC = () => {
               totalDays={result.totalDays} 
               startZone={startZone}
               endZone={endZone}
+              locale={locale}
             />
 
-            <DstAuditor transitions={transitions} zone="" isDualZone={startZone !== endZone} />
+            <DstAuditor
+              transitions={transitions}
+              zone={startZone}
+              zoneLabel={getFriendlyZoneLabel(startZone, locale)}
+              isDualZone={startZone !== endZone}
+            />
           </div>
         )}
       </div>
