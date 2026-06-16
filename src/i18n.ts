@@ -1,0 +1,319 @@
+export type Locale = 'zh' | 'en';
+export type ThemeMode = 'system' | 'light' | 'dark';
+export type ResolvedTheme = 'light' | 'dark';
+
+type MessageTree = {
+  readonly [key: string]: string | MessageTree;
+};
+
+const zh = {
+  app: {
+    subtitle:
+      '时区与夏令时审计感知的高精度日期计算器，支持跨国家/地区时区计算、DST 变更审计与中国农历计算。',
+    title: 'ChronoSphere',
+  },
+  actions: {
+    github: '打开 GitHub 仓库',
+    locale: '切换到 English',
+    theme: '切换主题',
+    themeSystem: '跟随系统',
+    themeLight: '浅色模式',
+    themeDark: '深色模式',
+  },
+  tabs: {
+    offset: '日期偏移计算',
+    interval: '日期区间计算',
+    lunar: '农历日期计算',
+  },
+  privacy: {
+    label: '本地计算',
+    body: '不登录、不追踪；所有日期、时区与农历计算都在浏览器完成。',
+  },
+  footer: {
+    hosted: '自托管于 Caddy / VPS',
+    copyright: '© {year} ChronoSphere。所有计算均在本地完成。',
+  },
+  github: {
+    label: 'StepaniaH/chrono-sphere',
+  },
+  timezone: {
+    placeholder: '搜索国家、城市或时区…',
+    empty: '没有找到匹配的地区或时区',
+    groups: {
+      commonAsia: '常用与亚洲',
+      america: '美洲',
+      europeAfrica: '欧洲与非洲',
+      oceania: '大洋洲',
+      utc: '协调世界时',
+    },
+  },
+  offset: {
+    baseZone: '基准时区',
+    startDate: '起始日期',
+    mode: '模式选择',
+    amount: '向后计算天数 (X)',
+    intervalMode: '间隔 X 日 (D + X)',
+    thDayMode: '第 X 日 (D + X - 1)',
+    intervalHelp: '「间隔 X 日」：从起始日算起，跨越 X 天。例如 6月1日 间隔 2 天是 6月3日。',
+    thDayHelp: '「第 X 日」：起始日算作第 1 天。例如 6月1日 的第 2 天是 6月2日（要求 X ≥ 1）。',
+    invalidNumber: '请输入有效的数字',
+    invalidDate: '无效的起始日期',
+    thDayMinimum: '「第 X 日」模式下，X 必须大于等于 1',
+    invalidCalculation: '计算出错',
+    placeholder: '请输入有效参数开始计算',
+    resultTitle: '计算结果',
+    lunarTitle: '农历',
+    dstActive: '夏令时中',
+  },
+  interval: {
+    startConfig: '起始点设置',
+    endConfig: '结束点设置',
+    startZone: '起始时区 (国家/地区)',
+    endZone: '结束时区 (国家/地区)',
+    startDate: '起始日期',
+    endDate: '结束日期',
+    inclusion: '包含规则',
+    both: '包括首尾日 (+1)',
+    startOnly: '仅包括首日 (+0)',
+    endOnly: '仅包括尾日 (+0)',
+    exclude: '不包括首尾日 (-1)',
+    bothHelp: '「包括首尾日」：计算天数包括起始和结束那两天。',
+    startHelp: '「仅包括首日」：算头不算尾。例如 6月1日 到 6月2日 为 1 天。',
+    endHelp: '「仅包括尾日」：算尾不算头。例如 6月1日 到 6月2日 为 1 天。',
+    excludeHelp: '「不包括首尾日」：仅计算夹在中间的天数。',
+    calendarDiff: '日历天数差 (Local Calendar Diff)',
+    workdays: '工作日 (周一至周五)',
+    weekends: '双休日 (周六至周日)',
+    absoluteTime: '跨时区绝对时间差 (从起始日 0 点到结束日 0 点实际流逝时间)',
+    lunarInfo: '农历对应信息',
+    startLunar: '起始农历',
+    endLunar: '结束农历',
+    placeholder: '请选择日期范围开始计算',
+    errorPlaceholder: '起始日期或结束日期无效',
+    negativeNote: '（起始日晚于结束日，计算结果为负）',
+    totalDaysUnit: '天',
+    hoursUnit: '天 {days} 小时 {hours}',
+    invalid: '计算出错',
+  },
+  lunar: {
+    baseZone: '基准时区',
+    startTitle: '起始农历日期',
+    year: '农历年份',
+    month: '农历月份',
+    day: '农历日期',
+    leapMonth: '此月是闰月 (例如：闰四月)',
+    startSolar: '对应公历',
+    ganzhi: '干支生肖',
+    mode: '模式选择',
+    amount: '天数偏移 (X)',
+    intervalMode: '间隔 X 日 (D + X)',
+    thDayMode: '第 X 日 (D + X - 1)',
+    error: '请输入向后计算的有效天数',
+    invalidLunar: '该农历日期在此年份不存在，请检查是否输入了错误的闰月或大/小月天数',
+    offsetError: '天数偏移计算出错',
+    targetSolar: '公历对应日期',
+    targetLunar: '农历计算结果',
+    auspicious: '宜',
+    inauspicious: '忌',
+    noAuspicious: '诸事不宜',
+    noInauspicious: '诸事无忌',
+    selectPrompt: '请选择农历日期并开始计算',
+    yearLabel: '年',
+    lunarLabel: '农历',
+    zodiacLabel: '属',
+    jieQiLabel: '节气',
+    festivalLabel: '节日',
+  },
+  visualizer: {
+    title: '区间结构与关键节点',
+    workdayShare: '工作日占比',
+    weekendShare: '双休日占比',
+    spanning: '跨越 {days} 天',
+    reversing: '倒退 {days} 天',
+    start: '起始',
+    end: '结束',
+    dst: '夏令时',
+    holiday: '节日',
+    jieQi: '节气',
+  },
+  dst: {
+    title: '夏令时变更审计 (DST Auditor)',
+    noTransitionSingle: '在所选计算范围内，{zone} 未发生夏令时切换。',
+    noTransitionDual: '在所选计算范围内，所涉及的两个时区均未发生夏令时切换。',
+    detectedCount: '检测到所选期间包含 {count} 次夏令时转换事件：',
+    forward: '夏令时开始',
+    backward: '夏令时结束',
+    shiftForward: '时钟向前拨快 {hours} 小时。这一天少 {hours} 小时（通常从 2:00 跳到 3:00）。',
+    shiftBackward: '时钟向后拨慢 {hours} 小时。这一天多 {hours} 小时（通常从 2:00 重复一次 1:00）。',
+    shiftMinutes: '（{minutes} 分钟）',
+  },
+} as const;
+
+const en = {
+  app: {
+    subtitle:
+      'A precision date calculator with timezone and DST awareness, built for cross-region calculations and Chinese lunar calendar workflows.',
+    title: 'ChronoSphere',
+  },
+  actions: {
+    github: 'Open GitHub repository',
+    locale: 'Switch to 中文',
+    theme: 'Toggle theme',
+    themeSystem: 'System',
+    themeLight: 'Light',
+    themeDark: 'Dark',
+  },
+  tabs: {
+    offset: 'Offset calculator',
+    interval: 'Interval calculator',
+    lunar: 'Lunar calculator',
+  },
+  privacy: {
+    label: 'Local-first',
+    body: 'No login, no tracking, and no uploads. Every calculation stays in your browser.',
+  },
+  footer: {
+    hosted: 'Self-hosted on Caddy / VPS',
+    copyright: '© {year} ChronoSphere. All calculations run locally.',
+  },
+  github: {
+    label: 'StepaniaH/chrono-sphere',
+  },
+  timezone: {
+    placeholder: 'Search country, city, or timezone…',
+    empty: 'No matching region or timezone found',
+    groups: {
+      commonAsia: 'Common & Asia',
+      america: 'Americas',
+      europeAfrica: 'Europe & Africa',
+      oceania: 'Oceania',
+      utc: 'Coordinated Universal Time',
+    },
+  },
+  offset: {
+    baseZone: 'Base timezone',
+    startDate: 'Start date',
+    mode: 'Mode',
+    amount: 'Days to move forward (X)',
+    intervalMode: 'Interval X days (D + X)',
+    thDayMode: 'Nth day (D + X - 1)',
+    intervalHelp: '“Interval X days”: count forward X days from the start date. For example, June 1 plus 2 days is June 3.',
+    thDayHelp: '“Nth day”: the start date counts as day 1. For example, the 2nd day after June 1 is June 2 (X must be at least 1).',
+    invalidNumber: 'Please enter a valid number',
+    invalidDate: 'Invalid start date',
+    thDayMinimum: 'In “Nth day” mode, X must be at least 1',
+    invalidCalculation: 'Calculation failed',
+    placeholder: 'Enter valid values to start calculating',
+    resultTitle: 'Result',
+    lunarTitle: 'Lunar date',
+    dstActive: 'In DST',
+  },
+  interval: {
+    startConfig: 'Start settings',
+    endConfig: 'End settings',
+    startZone: 'Start timezone (country / region)',
+    endZone: 'End timezone (country / region)',
+    startDate: 'Start date',
+    endDate: 'End date',
+    inclusion: 'Inclusion rule',
+    both: 'Include both ends (+1)',
+    startOnly: 'Include start only (+0)',
+    endOnly: 'Include end only (+0)',
+    exclude: 'Exclude both ends (-1)',
+    bothHelp: '“Include both ends”: the count includes both the start and end dates.',
+    startHelp: '“Include start only”: count the first day but not the last. For example, June 1 to June 2 is 1 day.',
+    endHelp: '“Include end only”: count the last day but not the first. For example, June 1 to June 2 is 1 day.',
+    excludeHelp: '“Exclude both ends”: count only the days in between.',
+    calendarDiff: 'Calendar day difference',
+    workdays: 'Weekdays (Mon-Fri)',
+    weekends: 'Weekend days (Sat-Sun)',
+    absoluteTime: 'Absolute elapsed time (from local midnight to local midnight)',
+    lunarInfo: 'Lunar equivalents',
+    startLunar: 'Start lunar',
+    endLunar: 'End lunar',
+    placeholder: 'Choose a date range to begin',
+    errorPlaceholder: 'Invalid start date or end date',
+    negativeNote: '(Start date is later than the end date; the result is negative)',
+    totalDaysUnit: 'days',
+    hoursUnit: '{days} days {hours} hours',
+    invalid: 'Calculation failed',
+  },
+  lunar: {
+    baseZone: 'Base timezone',
+    startTitle: 'Start lunar date',
+    year: 'Lunar year',
+    month: 'Lunar month',
+    day: 'Lunar day',
+    leapMonth: 'This is a leap month (for example, leap fourth month)',
+    startSolar: 'Matching Gregorian date',
+    ganzhi: 'Ganzhi / zodiac',
+    mode: 'Mode',
+    amount: 'Offset days (X)',
+    intervalMode: 'Interval X days (D + X)',
+    thDayMode: 'Nth day (D + X - 1)',
+    error: 'Please enter a valid number of days',
+    invalidLunar: 'That lunar date does not exist in this year. Please check the leap-month or day selection.',
+    offsetError: 'Offset calculation failed',
+    targetSolar: 'Gregorian result',
+    targetLunar: 'Lunar result',
+    auspicious: 'Auspicious',
+    inauspicious: 'Inauspicious',
+    noAuspicious: 'Nothing recommended',
+    noInauspicious: 'Nothing forbidden',
+    selectPrompt: 'Choose a lunar date to begin',
+    yearLabel: 'year',
+    lunarLabel: 'Lunar',
+    zodiacLabel: 'Zodiac: ',
+    jieQiLabel: 'Solar term',
+    festivalLabel: 'Festival',
+  },
+  visualizer: {
+    title: 'Range structure and key markers',
+    workdayShare: 'Weekday share',
+    weekendShare: 'Weekend share',
+    spanning: '{days} days across',
+    reversing: '{days} days back',
+    start: 'Start',
+    end: 'End',
+    dst: 'DST',
+    holiday: 'Holiday',
+    jieQi: 'Solar term',
+  },
+  dst: {
+    title: 'DST transition audit',
+    noTransitionSingle: 'Within the selected range, {zone} has no DST transition.',
+    noTransitionDual: 'Within the selected range, neither of the two selected timezones has a DST transition.',
+    detectedCount: 'Detected {count} DST transition events in the selected range:',
+    forward: 'DST starts',
+    backward: 'DST ends',
+    shiftForward: 'Clocks move forward by {hours} hour(s). This day is {hours} hour(s) shorter (usually from 2:00 to 3:00).',
+    shiftBackward: 'Clocks move backward by {hours} hour(s). This day is {hours} hour(s) longer (usually 1:00 repeats after 2:00).',
+    shiftMinutes: '({minutes} minutes)',
+  },
+} as const;
+
+const dictionaries = { zh, en } as const;
+
+export type MessageKey =
+  | keyof typeof zh
+  | `${keyof typeof zh}.${string}`
+  | `${keyof typeof zh}.${string}.${string}`;
+
+function lookup(tree: MessageTree | string, path: string[]): string | undefined {
+  if (typeof tree === 'string') return path.length === 0 ? tree : undefined;
+  const [head, ...rest] = path;
+  const next = tree[head];
+  if (next === undefined) return undefined;
+  if (rest.length === 0) return typeof next === 'string' ? next : undefined;
+  return lookup(next as MessageTree, rest);
+}
+
+export function translate(locale: Locale, key: string, vars?: Record<string, string | number>): string {
+  const fallback = lookup(dictionaries.zh, key.split('.'));
+  const raw = lookup(dictionaries[locale], key.split('.')) ?? fallback ?? key;
+  if (!vars) return raw;
+  return Object.entries(vars).reduce(
+    (acc, [name, value]) => acc.replaceAll(`{${name}}`, String(value)),
+    raw,
+  );
+}

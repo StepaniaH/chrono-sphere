@@ -1,7 +1,12 @@
 {
-  "name": "count_days",
+  "name": "chrono-sphere",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/StepaniaH/chrono-sphere.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
