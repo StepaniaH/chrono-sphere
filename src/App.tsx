@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Calendar, RefreshCw, Layers, Sparkles, Code2, Languages, Moon, Sun, Monitor, ShieldCheck } from 'lucide-react';
+import { Calendar, RefreshCw, Layers, Sparkles, Languages, Moon, Sun, Monitor, ShieldCheck } from 'lucide-react';
 import { OffsetCalculator } from './components/OffsetCalculator';
 import { IntervalCalculator } from './components/IntervalCalculator';
 import { LunarCalculator } from './components/LunarCalculator';
@@ -39,16 +39,6 @@ function App() {
             <h1 className="app-title">ChronoSphere</h1>
           </div>
           <div className="header-actions">
-            <a
-              className="header-action-btn"
-              href="https://github.com/StepaniaH/chrono-sphere"
-              target="_blank"
-              rel="noreferrer"
-              aria-label={t('actions.github')}
-              title={t('actions.github')}
-            >
-              <Code2 size={18} />
-            </a>
             <button
               type="button"
               className="header-action-btn"
@@ -111,8 +101,23 @@ function App() {
       </section>
 
       <footer className="app-footer">
-        <div>{t('footer.copyright', { year: new Date().getFullYear() })}</div>
-        <div>{t('footer.hosted')}</div>
+        <div className="app-footer-line">{t('footer.deployment')}</div>
+        <div className="app-footer-line">
+          <span>{t('footer.license')}</span>
+          <span className="footer-separator">·</span>
+          <span>
+            {t('footer.repository')}:
+            {' '}
+            <a
+              className="footer-link"
+              href="https://github.com/StepaniaH/chrono-sphere"
+              target="_blank"
+              rel="noreferrer"
+            >
+              StepaniaH/chrono-sphere
+            </a>
+          </span>
+        </div>
       </footer>
     </div>
   );

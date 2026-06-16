@@ -13,7 +13,6 @@ const zh = {
     title: 'ChronoSphere',
   },
   actions: {
-    github: '打开 GitHub 仓库',
     locale: '切换到 English',
     theme: '切换主题',
     themeSystem: '跟随系统',
@@ -27,14 +26,12 @@ const zh = {
   },
   privacy: {
     label: '本地计算',
-    body: '不登录、不追踪；所有日期、时区与农历计算都在浏览器完成。',
+    body: '不登录、不追踪，所有计算都留在浏览器里。',
   },
   footer: {
-    hosted: '自托管于 Caddy / VPS',
-    copyright: '© {year} ChronoSphere。所有计算均在本地完成。',
-  },
-  github: {
-    label: 'StepaniaH/chrono-sphere',
+    deployment: '自托管静态站点（Caddy / VPS）',
+    license: 'MIT License',
+    repository: '开源仓库',
   },
   timezone: {
     placeholder: '搜索国家、城市或时区…',
@@ -51,7 +48,7 @@ const zh = {
     baseZone: '基准时区',
     startDate: '起始日期',
     mode: '模式选择',
-    amount: '向后计算天数 (X)',
+    amount: '偏移天数 (X)',
     intervalMode: '间隔 X 日 (D + X)',
     thDayMode: '第 X 日 (D + X - 1)',
     intervalHelp: '「间隔 X 日」：从起始日算起，跨越 X 天。例如 6月1日 间隔 2 天是 6月3日。',
@@ -108,7 +105,7 @@ const zh = {
     amount: '天数偏移 (X)',
     intervalMode: '间隔 X 日 (D + X)',
     thDayMode: '第 X 日 (D + X - 1)',
-    error: '请输入向后计算的有效天数',
+    error: '请输入有效的偏移天数',
     invalidLunar: '该农历日期在此年份不存在，请检查是否输入了错误的闰月或大/小月天数',
     offsetError: '天数偏移计算出错',
     targetSolar: '公历对应日期',
@@ -156,7 +153,6 @@ const en = {
     title: 'ChronoSphere',
   },
   actions: {
-    github: 'Open GitHub repository',
     locale: 'Switch to 中文',
     theme: 'Toggle theme',
     themeSystem: 'System',
@@ -170,14 +166,12 @@ const en = {
   },
   privacy: {
     label: 'Local-first',
-    body: 'No login, no tracking, and no uploads. Every calculation stays in your browser.',
+    body: 'No login or tracking. All calculations stay in your browser.',
   },
   footer: {
-    hosted: 'Self-hosted on Caddy / VPS',
-    copyright: '© {year} ChronoSphere. All calculations run locally.',
-  },
-  github: {
-    label: 'StepaniaH/chrono-sphere',
+    deployment: 'Self-hosted static site (Caddy / VPS)',
+    license: 'MIT License',
+    repository: 'Open-source repository',
   },
   timezone: {
     placeholder: 'Search country, city, or timezone…',
@@ -194,7 +188,7 @@ const en = {
     baseZone: 'Base timezone',
     startDate: 'Start date',
     mode: 'Mode',
-    amount: 'Days to move forward (X)',
+    amount: 'Offset days (X)',
     intervalMode: 'Interval X days (D + X)',
     thDayMode: 'Nth day (D + X - 1)',
     intervalHelp: '“Interval X days”: count forward X days from the start date. For example, June 1 plus 2 days is June 3.',
@@ -251,7 +245,7 @@ const en = {
     amount: 'Offset days (X)',
     intervalMode: 'Interval X days (D + X)',
     thDayMode: 'Nth day (D + X - 1)',
-    error: 'Please enter a valid number of days',
+    error: 'Please enter a valid day offset',
     invalidLunar: 'That lunar date does not exist in this year. Please check the leap-month or day selection.',
     offsetError: 'Offset calculation failed',
     targetSolar: 'Gregorian result',

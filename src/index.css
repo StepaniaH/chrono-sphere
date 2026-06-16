@@ -723,9 +723,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 0.8rem;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
   border-top: 1px solid var(--border-subtle);
   margin-top: 20px;
+}
+
+.app-footer-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.footer-separator {
+  color: var(--text-muted);
+}
+
+.footer-link {
+  color: var(--text-primary);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: var(--transition-fast);
+}
+
+.footer-link:hover {
+  color: var(--accent-primary);
+  border-bottom-color: currentColor;
 }
 
 @keyframes float {
