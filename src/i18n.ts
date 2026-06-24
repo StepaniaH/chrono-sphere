@@ -37,6 +37,8 @@ const zh = {
   timezone: {
     placeholder: '搜索国家、城市或时区…',
     empty: '没有找到匹配的地区或时区',
+    openMenu: '打开时区菜单',
+    closeMenu: '关闭时区菜单',
     groups: {
       commonAsia: '常用与亚洲',
       america: '美洲',
@@ -53,6 +55,7 @@ const zh = {
     backward: '向后（过去）',
     mode: '模式选择',
     amount: '偏移天数 (X)',
+    amountPlaceholder: '例如：10',
     intervalMode: '间隔 X 日 (D + X)',
     intervalModeBackward: '间隔 X 日 (D - X)',
     thDayMode: '第 X 日 (D + X - 1)',
@@ -185,6 +188,8 @@ const en = {
   timezone: {
     placeholder: 'Search country, city, or timezone…',
     empty: 'No matching region or timezone found',
+    openMenu: 'Open timezone menu',
+    closeMenu: 'Close timezone menu',
     groups: {
       commonAsia: 'Common & Asia',
       america: 'Americas',
@@ -201,6 +206,7 @@ const en = {
     backward: 'Backward (past)',
     mode: 'Mode',
     amount: 'Offset days (X)',
+    amountPlaceholder: 'e.g. 10',
     intervalMode: 'Interval X days (D + X)',
     intervalModeBackward: 'Interval X days (D - X)',
     thDayMode: 'Nth day (D + X - 1)',

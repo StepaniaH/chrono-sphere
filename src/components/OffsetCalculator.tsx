@@ -147,7 +147,7 @@ export const OffsetCalculator: React.FC = () => {
             <input
               type="number"
               className="form-input"
-              placeholder="例如：10"
+              placeholder={t('offset.amountPlaceholder')}
               value={offsetStr}
               onChange={handleOffsetChange}
               min={0}
