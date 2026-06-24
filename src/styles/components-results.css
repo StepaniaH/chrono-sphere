@@ -87,8 +87,8 @@
 }
 
 .meta-pill.dst-active {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.25);
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning) 25%, transparent);
   color: var(--color-warning);
 }
 
@@ -178,8 +178,8 @@
 /* --- DST Auditor --- */
 
 .dst-auditor-card {
-  border: 1px solid rgba(245, 158, 11, 0.18);
-  background: rgba(245, 158, 11, 0.05);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 18%, transparent);
+  background: color-mix(in srgb, var(--color-warning) 5%, transparent);
   border-radius: var(--radius-md);
   padding: 16px;
   display: flex;
@@ -257,14 +257,14 @@
 
 .workday-ratio-fill {
   height: 100%;
-  background: linear-gradient(90deg, #10b981, #059669);
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(90deg, var(--color-success), color-mix(in srgb, var(--color-success) 70%, black));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 30%, transparent);
 }
 
 .weekend-ratio-fill {
   height: 100%;
-  background: linear-gradient(90deg, #8b5cf6, #d946ef);
-  box-shadow: 0 0 8px rgba(139, 92, 246, 0.3);
+  background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent-secondary) 30%, transparent);
 }
 
 .ratio-stats-row {

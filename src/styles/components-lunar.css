@@ -62,7 +62,7 @@
   font-size: 1.8rem;
   font-weight: 800;
   color: var(--accent-primary);
-  text-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 20%, transparent);
 }
 
 .lunar-result-pills {
@@ -168,11 +168,11 @@
 .meta-pill.jieqi {
   border-color: var(--color-success);
   color: var(--color-success);
-  background: rgba(16, 185, 129, 0.05);
+  background: color-mix(in srgb, var(--color-success) 5%, transparent);
 }
 
 .meta-pill.festival {
   border-color: var(--accent-secondary);
   color: var(--accent-secondary);
-  background: rgba(168, 85, 247, 0.05);
+  background: color-mix(in srgb, var(--accent-secondary) 5%, transparent);
 }
