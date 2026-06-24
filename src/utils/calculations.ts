@@ -148,15 +148,19 @@ export function calculateInterval(
       }
 
       if (checkStart <= checkEnd) {
-        let current = checkStart;
-        while (current <= checkEnd) {
-          const wd = current.weekday; // 1 = Mon, 7 = Sun
-          if (wd === 6 || wd === 7) {
-            weekends++;
-          } else {
-            workdays++;
-          }
-          current = current.plus({ days: 1 });
+        const dayCount = Math.round(checkEnd.diff(checkStart, 'days').days) + 1; // inclusive
+        const startWd = checkStart.weekday; // 1=Mon … 7=Sun
+
+        const fullWeeks = Math.floor(dayCount / 7);
+        const remainingDays = dayCount % 7;
+
+        workdays = fullWeeks * 5;
+        weekends = fullWeeks * 2;
+
+        for (let i = 0; i < remainingDays; i++) {
+          const wd = ((startWd + i - 1) % 7) + 1;
+          if (wd <= 5) workdays++;
+          else weekends++;
         }
       }
     }

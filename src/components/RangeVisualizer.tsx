@@ -46,15 +46,19 @@ export const RangeVisualizer: React.FC<RangeVisualizerProps> = ({
     const endUtc = DateTime.fromISO(endISO, { zone: 'UTC' }).startOf('day');
 
     if (startUtc.isValid && endUtc.isValid) {
-      let current = startUtc;
-      while (current <= endUtc) {
-        const wd = current.weekday;
-        if (wd === 6 || wd === 7) {
-          weekends++;
-        } else {
-          workdays++;
-        }
-        current = current.plus({ days: 1 });
+      const dayCount = Math.round(endUtc.diff(startUtc, 'days').days) + 1; // inclusive
+      const startWd = startUtc.weekday; // 1=Mon … 7=Sun
+
+      const fullWeeks = Math.floor(dayCount / 7);
+      const remainingDays = dayCount % 7;
+
+      workdays = fullWeeks * 5;
+      weekends = fullWeeks * 2;
+
+      for (let i = 0; i < remainingDays; i++) {
+        const wd = ((startWd + i - 1) % 7) + 1;
+        if (wd <= 5) workdays++;
+        else weekends++;
       }
     }
   } catch (error) {
