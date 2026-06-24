@@ -1,214 +1,143 @@
 import React from 'react';
+import { utcOffsetLabel } from '../utils/cardHelpers';
+import type { Locale } from '../i18n';
 
 interface CardLunarProps {
   customText: string;
-  lunarYear: number;
-  lunarMonth: number;
-  lunarDay: number;
-  isLeap: boolean;
-  lunarStr: string;
-  yearGanZhi: string;
-  shengXiao: string;
-  solarDate: string;
-  weekday: string;
-  jieQi?: string;
-  festivals?: string[];
-  auspicious?: string[];
-  inauspicious?: string[];
-  code: string;
-  theme: 'auto' | 'light' | 'dark';
-  locale: 'zh' | 'en';
+  lunarYear: number; lunarMonth: number; lunarDay: number; isLeap: boolean;
+  lunarStr: string; yearGanZhi: string; shengXiao: string;
+  solarDate: string; weekday: string; zone: string;
+  jieQi?: string; festivals?: string[];
+  auspicious?: string[]; inauspicious?: string[];
+  code: string; theme: 'auto' | 'light' | 'dark'; locale: Locale;
 }
 
-/**
- * Truncate an array and append an overflow label like "…等 N 项"
- * or "…and N more".
- */
-function truncateWithOverflow(
-  items: string[] | undefined,
-  max: number,
-  locale: 'zh' | 'en',
-): string[] {
-  if (!items || items.length === 0) return [];
-  if (items.length <= max) return items;
-
-  const shown = items.slice(0, max);
-  const remaining = items.length - max;
-  const suffix =
-    locale === 'zh' ? `…等 ${remaining} 项` : `…and ${remaining} more`;
-  return [...shown, suffix];
-}
-
-/**
- * ChronoSphere brand icon — a minimalist calendar/sphere mark.
- */
-const BrandIcon: React.FC = () => (
-  <svg
-    width="22"
-    height="22"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    {/* Outer ring */}
-    <circle
-      cx="12"
-      cy="12"
-      r="10"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      fill="none"
-    />
-    {/* Inner calendar grid */}
-    <rect
-      x="7"
-      y="5"
-      width="10"
-      height="11"
-      rx="2"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      fill="none"
-    />
-    <line
-      x1="7"
-      y1="9"
-      x2="17"
-      y2="9"
-      stroke="currentColor"
-      strokeWidth="1.2"
-    />
-    <line x1="9.5" y1="3" x2="9.5" y2="7" stroke="currentColor" strokeWidth="1.2" />
-    <line x1="14.5" y1="3" x2="14.5" y2="7" stroke="currentColor" strokeWidth="1.2" />
-    {/* Moon crescent inside the sphere (lunar hint) */}
-    <path
-      d="M17.5 17.5 A4 4 0 1 1 14 14"
-      stroke="currentColor"
-      strokeWidth="1.3"
-      fill="none"
-      strokeLinecap="round"
-    />
+const Brand: React.FC = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.4"/>
+    <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.5"/>
   </svg>
 );
 
+function trunc(items: string[] | undefined, max: number, loc: Locale): string[] {
+  if (!items || items.length === 0) return [];
+  if (items.length <= max) return items;
+  return [...items.slice(0, max), loc === 'zh' ? `…等${items.length - max}项` : `…+${items.length - max}`];
+}
+
+const LUNAR_MONTH_ZH = ['正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','冬月','腊月'];
+
 export const CardLunar: React.FC<CardLunarProps> = ({
-  customText,
-  lunarYear: _lunarYear,
-  lunarMonth: _lunarMonth,
-  lunarDay: _lunarDay,
-  isLeap: _isLeap,
-  lunarStr,
-  yearGanZhi,
-  shengXiao,
-  solarDate,
-  weekday,
-  jieQi,
-  festivals,
-  auspicious,
-  inauspicious,
-  code,
-  theme,
-  locale,
+  customText, lunarStr, yearGanZhi, shengXiao, solarDate, weekday, zone,
+  jieQi, festivals, auspicious, inauspicious, code, theme, locale,
+  lunarMonth, isLeap,
 }) => {
-  const truncatedAuspicious = truncateWithOverflow(auspicious, 4, locale);
-  const truncatedInauspicious = truncateWithOverflow(inauspicious, 4, locale);
-  const hasFestivals = festivals && festivals.length > 0;
-  const hasJieQi = !!jieQi;
-  const hasAuspicious = truncatedAuspicious.length > 0;
-  const hasInauspicious = truncatedInauspicious.length > 0;
-  const hasYiJi = hasAuspicious || hasInauspicious;
+  const utc = utcOffsetLabel(zone);
+  const zh = locale === 'zh';
+  const hasYi = auspicious && auspicious.length > 0;
+  const hasJi = inauspicious && inauspicious.length > 0;
+  const hasYiJi = hasYi || hasJi;
+  const hasSpecial = !!(jieQi || (festivals && festivals.length > 0));
+
+  const tagJieqi = {
+    color: 'var(--color-success)',
+    background: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+    borderColor: 'color-mix(in srgb, var(--color-success) 20%, transparent)',
+  };
+  const tagFestival = {
+    color: 'var(--accent-secondary)',
+    background: 'color-mix(in srgb, var(--accent-secondary) 10%, transparent)',
+    borderColor: 'color-mix(in srgb, var(--accent-secondary) 20%, transparent)',
+  };
+
+  const monthName = isLeap
+    ? (zh ? `闰${LUNAR_MONTH_ZH[lunarMonth - 1] || ''}` : `Leap ${lunarMonth}th`)
+    : (zh ? LUNAR_MONTH_ZH[lunarMonth - 1] || '' : `${lunarMonth}th Month`);
 
   return (
-    <div
-      className="share-card"
-      data-card-theme={theme !== 'auto' ? theme : undefined}
-    >
-      {/* ── Header: Custom text ── */}
-      <div className="share-card-header">
-        <div className="share-card-custom-text">{customText}</div>
+    <div className="share-card" data-card-theme={theme === 'auto' ? undefined : theme}>
+      {/* Title bar */}
+      <div className="sc-title-bar">
+        <span className="sc-title">{customText || (zh ? '农历日期' : 'Lunar Date')}</span>
       </div>
 
-      {/* ── Main display: lunar date + GānZhī / ShēngXiāo ── */}
-      <div className="share-card-result">
-        <div className="share-card-result-row">
-          <span className="share-card-big-date">{lunarStr}</span>
+      {/* Hero — lunar date */}
+      <div className="sc-hero">
+        <div className="sc-hero-date" style={{ color: 'var(--text-primary)' }}>{lunarStr}</div>
+        <div className="sc-hero-sub" style={{ fontSize: 24, color: 'var(--text-secondary)', fontWeight: 500 }}>
+          {yearGanZhi}{zh ? '年' : ''} · {zh ? '属' : ''}{shengXiao}
         </div>
-        <div className="share-card-result-row">
-          <span className="share-card-meta">
-            {yearGanZhi} · {shengXiao}
-          </span>
-        </div>
+      </div>
 
-        {/* Solar date + weekday */}
-        <div className="share-card-result-row">
-          <span className="share-card-big-date" style={{ fontSize: 36 }}>
-            {solarDate}
-          </span>
+      {/* Solar date */}
+      <div className="sc-hero" style={{ marginBottom: 20 }}>
+        <div className="sc-hero-date-plain" style={{ fontSize: 44 }}>{solarDate}</div>
+        <div className="sc-pills">
+          <span className="sc-pill">{weekday}</span>
+          <span className="sc-pill">{utc}</span>
         </div>
-        <div className="share-card-result-row">
-          <span className="share-card-meta">{weekday}</span>
-        </div>
-
-        {/* 节气 + 节日 */}
-        {(hasJieQi || hasFestivals) && (
-          <div className="share-card-result-row">
-            {hasJieQi && (
-              <span
-                className="share-card-meta"
-                style={{ color: 'var(--color-success)' }}
-              >
-                {jieQi}
-              </span>
-            )}
-            {hasJieQi && hasFestivals && (
-              <span className="share-card-meta" style={{ color: 'var(--text-muted)' }}>
-                ·
-              </span>
-            )}
-            {hasFestivals && (
-              <span
-                className="share-card-meta"
-                style={{ color: 'var(--accent-secondary)' }}
-              >
-                {festivals!.join(' · ')}
-              </span>
-            )}
+        {hasSpecial && (
+          <div className="sc-tags">
+            {jieQi && <span className="sc-tag" style={tagJieqi}>{jieQi}</span>}
+            {festivals && festivals.map(f => (
+              <span key={f} className="sc-tag" style={tagFestival}>{f}</span>
+            ))}
           </div>
         )}
       </div>
 
-      {/* ── 宜忌 (Auspicious / Inauspicious) ── */}
-      {hasYiJi && (
-        <div className="share-card-auspicious">
-          {hasAuspicious && (
-            <div className="share-card-auspicious-row">
-              <span className="share-card-auspicious-label">
-                {locale === 'zh' ? '宜' : 'Auspicious'}
-                {': '}
-              </span>
-              {truncatedAuspicious.join(' · ')}
-            </div>
-          )}
-
-          {hasInauspicious && (
-            <div className="share-card-auspicious-row">
-              <span className="share-card-inaauspicious-label">
-                {locale === 'zh' ? '忌' : 'Inauspicious'}
-                {': '}
-              </span>
-              {truncatedInauspicious.join(' · ')}
-            </div>
-          )}
+      {/* Info cells */}
+      <div className="sc-cells">
+        <div className="sc-cell">
+          <div className="sc-cell-value">{monthName}</div>
+          <div className="sc-cell-label">{zh ? '农历月' : 'Month'}</div>
         </div>
-      )}
-
-      {/* ── Footer: code + brand ── */}
-      <div className="share-card-footer">
-        <span className="share-card-code">{code}</span>
-        <div className="share-card-brand">
-          <BrandIcon />
-          <span>ChronoSphere</span>
+        <div className="sc-cell">
+          <div className="sc-cell-value">{yearGanZhi}</div>
+          <div className="sc-cell-label">{zh ? '干支' : 'GanZhi'}</div>
         </div>
+        <div className="sc-cell">
+          <div className="sc-cell-value">{zh ? `属${shengXiao}` : shengXiao}</div>
+          <div className="sc-cell-label">{zh ? '生肖' : 'Zodiac'}</div>
+        </div>
+      </div>
+
+      {/* Yi/Ji summary panel — fills remaining space */}
+      <div className="sc-summary">
+        <div className="sc-summary-title">{zh ? '黄历宜忌' : 'Almanac'}</div>
+        {hasYiJi ? (
+          <div className="sc-yiji">
+            {hasYi && (
+              <div className="sc-yiji-row">
+                <span className="sc-yiji-label" style={{ color: 'var(--color-success)' }}>
+                  {zh ? '宜' : '✓'}
+                </span>
+                <span className="sc-yiji-items">{trunc(auspicious, 8, locale).join(' · ')}</span>
+              </div>
+            )}
+            {hasJi && (
+              <div className="sc-yiji-row">
+                <span className="sc-yiji-label" style={{ color: 'var(--color-error)' }}>
+                  {zh ? '忌' : '✗'}
+                </span>
+                <span className="sc-yiji-items">{trunc(inauspicious, 8, locale).join(' · ')}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ fontSize: 18, color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
+            {zh ? '当日无宜忌记载' : 'No Yi/Ji records'}
+          </div>
+        )}
+        <div className="sc-summary-note">
+          {zh ? `${solarDate} · ${weekday} · ${utc}` : `${solarDate} · ${weekday} · ${utc}`}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="sc-footer">
+        <span className="sc-code">#{code}</span>
+        <div className="sc-brand"><Brand /><span>ChronoSphere</span></div>
       </div>
     </div>
   );

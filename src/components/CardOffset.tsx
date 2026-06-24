@@ -1,255 +1,129 @@
 import React from 'react';
-
-// ── Types ────────────────────────────────────────────────────────────────
+import { utcOffsetLabel } from '../utils/cardHelpers';
+import { DonutChart } from './DonutChart';
 
 interface CardOffsetProps {
   customText: string;
-  startDate: string;       // 'yyyy-MM-dd'
-  resultDate: string;      // 'yyyy-MM-dd'
-  weekday: string;         // localized weekday name
-  zone: string;            // e.g. 'Asia/Shanghai'
-  offsetDays: number;      // absolute value
-  isBackward: boolean;
-  workdays: number;
-  weekends: number;
-  workdayPercent: number;
-  weekendPercent: number;
-  lunarStr?: string;       // lunar date string
-  yearGanZhi?: string;     // 干支
-  shengXiao?: string;      // 生肖
-  jieQi?: string;          // 节气
-  festivals?: string[];    // 节日列表
-  code: string;            // base62 code
-  theme: 'auto' | 'light' | 'dark';
-  locale: 'zh' | 'en';
+  startDate: string; resultDate: string; weekday: string; zone: string;
+  offsetDays: number; isBackward: boolean;
+  workdays: number; weekends: number; workdayPercent: number; weekendPercent: number;
+  lunarStr?: string; yearGanZhi?: string; shengXiao?: string;
+  jieQi?: string; festivals?: string[];
+  code: string; theme: 'auto' | 'light' | 'dark'; locale: 'zh' | 'en';
 }
 
-// ── Sub-components ───────────────────────────────────────────────────────
-
-const ChronoBrand: React.FC = () => (
-  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="1" y="1" width="20" height="20" rx="5" fill="currentColor" opacity="0.15" />
-    <rect x="1" y="1" width="20" height="20" rx="5" stroke="currentColor" strokeWidth="1.5" />
-    <text x="11" y="15.5" textAnchor="middle" fontSize="13" fontWeight="700" fill="currentColor" fontFamily="system-ui, sans-serif">C</text>
+const Brand: React.FC = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.4"/>
+    <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.5"/>
   </svg>
 );
 
-const Stat: React.FC<{ value: number; label: string }> = ({ value, label }) => (
-  <div className="share-card-stat">
-    <div className="share-card-stat-value">{value.toLocaleString()}</div>
-    <div className="share-card-stat-label">{label}</div>
-  </div>
-);
-
-const RatioBar: React.FC<{
-  workdayPercent: number;
-  weekendPercent: number;
-  locale: 'zh' | 'en';
-}> = ({ workdayPercent, weekendPercent, locale }) => (
-  <>
-    <div className="share-card-ratio-bar">
-      <div
-        className="share-card-ratio-fill-work"
-        style={{ width: `${workdayPercent}%` }}
-      />
-      <div
-        className="share-card-ratio-fill-weekend"
-        style={{ width: `${weekendPercent}%` }}
-      />
-    </div>
-    <div className="share-card-ratio-labels">
-      <span>
-        {locale === 'zh' ? '工作日' : 'Workdays'} {workdayPercent}%
-      </span>
-      <span>
-        {locale === 'zh' ? '双休日' : 'Weekends'} {weekendPercent}%
-      </span>
-    </div>
-  </>
-);
-
-const Timeline: React.FC<{
-  startLabel: string;
-  endLabel: string;
-  jieQi?: string;
-  festivals?: string[];
-}> = ({ startLabel, endLabel, jieQi, festivals }) => {
-  const markers: { label: string; position: number }[] = [];
-
-  if (jieQi) {
-    markers.push({ label: jieQi, position: 50 });
-  }
-  if (festivals && festivals.length > 0) {
-    festivals.forEach((f, i) => {
-      markers.push({ label: f, position: 30 + i * 25 });
-    });
-  }
-
-  return (
-    <div>
-      <div className="share-card-timeline">
-        <div className="share-card-timeline-progress" />
-        <div className="share-card-timeline-node" style={{ left: '0%' }} />
-        <div className="share-card-timeline-node end" style={{ left: '100%' }} />
-        {markers.map((m, i) => (
-          <div
-            key={i}
-            className="share-card-timeline-node"
-            style={{ left: `${m.position}%`, borderColor: 'var(--color-warning)' }}
-          >
-            <div className="share-card-timeline-label">{m.label}</div>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', margin: '0 20px 24px', fontSize: '13px', color: 'var(--text-muted)' }}>
-        <span>{startLabel}</span>
-        <span>{endLabel}</span>
-      </div>
-    </div>
-  );
-};
-
-const InfoGrid: React.FC<{
-  items: { label: string; value: string }[];
-}> = ({ items }) => (
-  <div className="share-card-info">
-    {items.map((item, i) => (
-      <div className="share-card-info-item" key={i}>
-        <span className="share-card-info-label">{item.label}</span>
-        <span className="share-card-info-value">{item.value}</span>
-      </div>
-    ))}
-  </div>
-);
-
-const Footer: React.FC<{ code: string }> = ({ code }) => (
-  <div className="share-card-footer">
-    <span className="share-card-code">#{code}</span>
-    <div className="share-card-brand">
-      <ChronoBrand />
-      <span>ChronoSphere</span>
-    </div>
-  </div>
-);
-
-// ── Main component ───────────────────────────────────────────────────────
-
 const CardOffset: React.FC<CardOffsetProps> = ({
-  customText,
-  startDate,
-  resultDate,
-  weekday,
-  zone,
-  offsetDays,
-  isBackward,
-  workdays,
-  weekends,
-  workdayPercent,
-  weekendPercent,
-  lunarStr,
-  yearGanZhi,
-  shengXiao,
-  jieQi,
-  festivals,
-  code,
-  theme,
-  locale,
+  customText, startDate, resultDate, weekday, zone,
+  offsetDays, isBackward, workdays, weekends, workdayPercent, weekendPercent,
+  lunarStr, yearGanZhi, shengXiao, jieQi, festivals,
+  code, theme, locale,
 }) => {
-  const resolvedTheme = theme === 'auto' ? 'light' : theme;
+  const utc = utcOffsetLabel(zone);
+  const zh = locale === 'zh';
+  const dirText = isBackward ? (zh ? '向后追溯' : 'Backward') : (zh ? '向前推算' : 'Forward');
 
-  const infoItems: { label: string; value: string }[] = [
-    {
-      label: locale === 'zh' ? '时区' : 'Zone',
-      value: zone,
-    },
-    {
-      label: locale === 'zh' ? '方向' : 'Direction',
-      value: isBackward
-        ? (locale === 'zh' ? '向前追溯' : 'Backward')
-        : (locale === 'zh' ? '向后推算' : 'Forward'),
-    },
-    {
-      label: locale === 'zh' ? '自然天数' : 'Calendar days',
-      value: String(offsetDays),
-    },
-    {
-      label: locale === 'zh' ? '分享码' : 'Share code',
-      value: code,
-    },
-    ...(yearGanZhi
-      ? [
-          {
-            label: locale === 'zh' ? '干支' : 'Gan-Zhi',
-            value: yearGanZhi,
-          },
-        ]
-      : []),
-    ...(shengXiao
-      ? [
-          {
-            label: locale === 'zh' ? '生肖' : 'Zodiac',
-            value: shengXiao,
-          },
-        ]
-      : []),
-  ];
+  const tagJieqi = {
+    color: 'var(--color-success)',
+    background: 'color-mix(in srgb, var(--color-success) 10%, transparent)',
+    borderColor: 'color-mix(in srgb, var(--color-success) 20%, transparent)',
+  };
+  const tagFestival = {
+    color: 'var(--accent-secondary)',
+    background: 'color-mix(in srgb, var(--accent-secondary) 10%, transparent)',
+    borderColor: 'color-mix(in srgb, var(--accent-secondary) 20%, transparent)',
+  };
 
   return (
-    <div className="share-card" data-card-theme={resolvedTheme}>
-      {/* Header: custom text */}
-      <div className="share-card-header">
-        <h1 className="share-card-custom-text">{customText}</h1>
+    <div className="share-card" data-card-theme={theme === 'auto' ? undefined : theme}>
+      {/* Title bar */}
+      <div className="sc-title-bar">
+        <span className="sc-title">{customText || (zh ? '日期推算' : 'Date Offset')}</span>
       </div>
 
-      {/* Result box: start date → target date */}
-      <div className="share-card-result">
-        <div className="share-card-result-row">
-          <span className="share-card-big-date">{startDate}</span>
-          <span className="share-card-arrow">{isBackward ? '←' : '→'}</span>
-          <span className="share-card-big-date">{resultDate}</span>
+      {/* Hero — result date */}
+      <div className="sc-hero">
+        <div className="sc-hero-date">{resultDate}</div>
+        <div className="sc-pills">
+          <span className="sc-pill">{weekday}</span>
+          <span className="sc-pill">{utc}</span>
         </div>
-        <div className="share-card-meta">
-          {weekday} · {zone.split('/').pop()}
-        </div>
-        {lunarStr && (
-          <div className="share-card-lunar">
-            {locale === 'zh' ? '农历' : 'Lunar'} {lunarStr}
-            {yearGanZhi && shengXiao ? ` (${yearGanZhi} · ${shengXiao})` : ''}
+        {(lunarStr || yearGanZhi) && (
+          <div className="sc-hero-sub">
+            {lunarStr && `${zh ? '农历' : 'Lunar'} ${lunarStr}`}
+            {yearGanZhi && ` · ${yearGanZhi}${zh ? '年' : ''}`}
+            {shengXiao && ` · ${zh ? '属' : ''}${shengXiao}`}
+          </div>
+        )}
+        {(jieQi || (festivals && festivals.length > 0)) && (
+          <div className="sc-tags">
+            {jieQi && <span className="sc-tag" style={tagJieqi}>{jieQi}</span>}
+            {festivals && festivals.map(f => (
+              <span key={f} className="sc-tag" style={tagFestival}>{f}</span>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Stats */}
-      <div className="share-card-stats">
-        <Stat value={offsetDays} label={locale === 'zh' ? '天' : 'days'} />
-        <Stat value={workdays} label={locale === 'zh' ? '工作日' : 'workdays'} />
-        <Stat value={weekends} label={locale === 'zh' ? '双休日' : 'weekends'} />
+      {/* Donut charts */}
+      <div className="sc-donuts">
+        <DonutChart
+          percent={workdayPercent}
+          label={zh ? '工作日' : 'Workdays'}
+          sublabel={`${workdays} ${zh ? '天' : 'days'}`}
+          color="var(--color-success)"
+        />
+        <DonutChart
+          percent={weekendPercent}
+          label={zh ? '双休日' : 'Weekends'}
+          sublabel={`${weekends} ${zh ? '天' : 'days'}`}
+          color="var(--accent-secondary)"
+        />
       </div>
 
-      {/* Ratio bar */}
-      <RatioBar
-        workdayPercent={workdayPercent}
-        weekendPercent={weekendPercent}
-        locale={locale}
-      />
+      {/* Summary panel */}
+      <div className="sc-summary">
+        <div className="sc-summary-title">{zh ? '计算摘要' : 'Summary'}</div>
+        <div className="sc-summary-row">
+          <span className="sc-summary-key">{zh ? '起始日期' : 'Start'}</span>
+          <span className="sc-summary-val">{startDate}</span>
+        </div>
+        <div className="sc-summary-row">
+          <span className="sc-summary-key">{zh ? '目标日期' : 'Target'}</span>
+          <span className="sc-summary-val accent">{resultDate}</span>
+        </div>
+        <div className="sc-summary-row">
+          <span className="sc-summary-key">{zh ? '方向' : 'Direction'}</span>
+          <span className="sc-summary-val">{dirText}</span>
+        </div>
+        <div className="sc-summary-row">
+          <span className="sc-summary-key">{zh ? '偏移量' : 'Offset'}</span>
+          <span className="sc-summary-val">{isBackward ? '-' : '+'}{offsetDays} {zh ? '天' : 'days'}</span>
+        </div>
+        <div className="sc-summary-row">
+          <span className="sc-summary-key">{zh ? '时区' : 'Timezone'}</span>
+          <span className="sc-summary-val">{utc}</span>
+        </div>
+        <div className="sc-summary-note">
+          {zh
+            ? `共 ${offsetDays} 天 · ${workdays} 工作日 · ${weekends} 休息日`
+            : `${offsetDays} days total · ${workdays} workdays · ${weekends} weekends`}
+        </div>
+      </div>
 
-      {/* Simplified timeline */}
-      <Timeline
-        startLabel={startDate}
-        endLabel={resultDate}
-        jieQi={jieQi}
-        festivals={festivals}
-      />
-
-      {/* Info grid */}
-      <InfoGrid items={infoItems} />
-
-      {/* Footer: code + brand */}
-      <Footer code={code} />
+      {/* Footer */}
+      <div className="sc-footer">
+        <span className="sc-code">#{code}</span>
+        <div className="sc-brand"><Brand /><span>ChronoSphere</span></div>
+      </div>
     </div>
   );
 };
 
-export { CardOffset };
-export default CardOffset;
-export type { CardOffsetProps };
+export { CardOffset }; export default CardOffset; export type { CardOffsetProps };

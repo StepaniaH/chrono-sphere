@@ -1,110 +1,63 @@
 import React from 'react';
-import { getZoneShortLabel } from '../utils/dateUtils';
+import { utcOffsetLabel } from '../utils/cardHelpers';
+import { DonutChart } from './DonutChart';
 
 export interface CardIntervalProps {
   customText: string;
-  startDate: string;
-  endDate: string;
-  startZone: string;
-  endZone: string;
-  totalDays: number;       // absolute (always positive; use isNegative for sign)
-  isNegative: boolean;
-  workdays: number;
-  weekends: number;
-  workdayPercent: number;
-  weekendPercent: number;
-  absoluteDays: number;
-  absoluteHours: number;
-  startLunarStr?: string;
-  endLunarStr?: string;
-  code: string;
-  theme: 'auto' | 'light' | 'dark';
-  locale: 'zh' | 'en';
+  startDate: string; endDate: string; startZone: string; endZone: string;
+  totalDays: number; isNegative: boolean;
+  workdays: number; weekends: number;
+  workdayPercent: number; weekendPercent: number;
+  absoluteDays: number; absoluteHours: number;
+  startLunarStr?: string; endLunarStr?: string;
+  code: string; theme: 'auto' | 'light' | 'dark'; locale: 'zh' | 'en';
 }
 
-/** Brand SVG: a minimal calendar-with-clockmark icon */
-const BrandIcon: React.FC = () => (
-  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.8" />
-    <path d="M3 10h18" stroke="currentColor" strokeWidth="1.8" />
-    <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    <circle cx="12" cy="15" r="4" stroke="currentColor" strokeWidth="1.4" />
-    <path d="M12 12.5v2.5l1.5 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+const Brand: React.FC = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" fill="none" opacity="0.4"/>
+    <circle cx="12" cy="12" r="3" fill="currentColor" opacity="0.5"/>
   </svg>
 );
 
-function formatDate(dateStr: string, locale: 'zh' | 'en'): string {
-  const [y, m, d] = dateStr.split('-');
-  const month = parseInt(m, 10);
-  const day = parseInt(d, 10);
-  if (locale === 'zh') {
-    return `${y}年${month}月${day}日`;
-  }
-  // English: "Jun 24, 2026" style
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-  return `${months[month - 1]} ${day}, ${y}`;
-}
-
 const CardInterval: React.FC<CardIntervalProps> = ({
-  customText,
-  startDate,
-  endDate,
-  startZone,
-  endZone,
-  totalDays,
-  isNegative,
-  workdays,
-  weekends,
-  workdayPercent,
-  weekendPercent,
-  absoluteDays,
-  absoluteHours,
-  startLunarStr,
-  endLunarStr,
-  code,
-  theme,
-  locale,
+  customText, startDate, endDate, startZone, endZone,
+  totalDays, isNegative, workdays, weekends,
+  workdayPercent, weekendPercent, absoluteDays, absoluteHours,
+  startLunarStr, endLunarStr,
+  code, theme, locale,
 }) => {
-  const differentZones = startZone !== endZone;
-  const startLabel = getZoneShortLabel(startZone, locale);
-  const endLabel = getZoneShortLabel(endZone, locale);
-
-  const daysLabel = locale === 'zh' ? '天' : 'days';
-  const hrsLabel = locale === 'zh' ? '时' : 'hr';
-  const workdaysLabel = locale === 'zh' ? '工作日' : 'Weekdays';
-  const weekendsLabel = locale === 'zh' ? '双休日' : 'Weekends';
-  const absoluteLabel = locale === 'zh' ? '绝对时间' : 'Absolute time';
-  const zoneInfoLabel = locale === 'zh' ? '时区' : 'Timezone';
-  const brandLabel = 'ChronoSphere';
-
-  const displayDays = isNegative ? `-${totalDays}` : `${totalDays}`;
+  const utcS = utcOffsetLabel(startZone);
+  const utcE = utcOffsetLabel(endZone);
+  const diff = startZone !== endZone;
+  const zh = locale === 'zh';
+  const d = zh ? '天' : 'days';
+  const absTot = absoluteDays * 24 + absoluteHours;
 
   return (
     <div className="share-card" data-card-theme={theme === 'auto' ? undefined : theme}>
-      {/* ── Header / Custom text ── */}
-      <div className="share-card-header">
-        <div className="share-card-custom-text">{customText}</div>
+      {/* Title bar */}
+      <div className="sc-title-bar">
+        <span className="sc-title">{customText || (zh ? '日期区间' : 'Date Interval')}</span>
       </div>
 
-      {/* ── Result box: startDate → endDate ── */}
-      <div className="share-card-result">
-        <div className="share-card-result-row">
-          <span className="share-card-big-date">{formatDate(startDate, locale)}</span>
-          <span className="share-card-arrow">→</span>
-          <span className="share-card-big-date">{formatDate(endDate, locale)}</span>
+      {/* Hero — start → end + big number */}
+      <div className="sc-hero">
+        <div className="sc-hero-dates">
+          <span className="sc-hero-date-plain">{startDate}</span>
+          <span className="sc-hero-arrow">→</span>
+          <span className="sc-hero-date-plain">{endDate}</span>
         </div>
-        {differentZones && (
-          <div className="share-card-result-row">
-            <span className="share-card-meta">
-              {startLabel} → {endLabel}
-            </span>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 8 }}>
+          <span className="sc-hero-number">{isNegative ? `-${totalDays}` : totalDays}</span>
+          <span className="sc-hero-unit">{d}</span>
+        </div>
+        <div className="sc-pills">
+          <span className="sc-pill">{utcS}{diff ? ` → ${utcE}` : ''}</span>
+          <span className="sc-pill">{zh ? `${absoluteDays}天${absoluteHours}时` : `${absoluteDays}d ${absoluteHours}h`}</span>
+        </div>
         {(startLunarStr || endLunarStr) && (
-          <div className="share-card-lunar">
+          <div className="sc-hero-sub">
             {startLunarStr && <span>{startLunarStr}</span>}
             {startLunarStr && endLunarStr && <span> · </span>}
             {endLunarStr && <span>{endLunarStr}</span>}
@@ -112,111 +65,52 @@ const CardInterval: React.FC<CardIntervalProps> = ({
         )}
       </div>
 
-      {/* ── Stats row ── */}
-      <div className="share-card-stats">
-        <div className="share-card-stat">
-          <div className="share-card-stat-value">{displayDays}</div>
-          <div className="share-card-stat-label">{daysLabel}</div>
+      {/* Donut charts */}
+      <div className="sc-donuts">
+        <DonutChart
+          percent={workdayPercent}
+          label={zh ? '工作日' : 'Workdays'}
+          sublabel={`${workdays} ${zh ? '天' : 'days'}`}
+          color="var(--color-success)"
+        />
+        <DonutChart
+          percent={weekendPercent}
+          label={zh ? '双休日' : 'Weekends'}
+          sublabel={`${weekends} ${zh ? '天' : 'days'}`}
+          color="var(--accent-secondary)"
+        />
+      </div>
+
+      {/* Summary panel */}
+      <div className="sc-summary">
+        <div className="sc-summary-title">{zh ? '计算摘要' : 'Summary'}</div>
+        <div className="sc-summary-row">
+          <span className="sc-summary-key">{zh ? '起始' : 'Start'}</span>
+          <span className="sc-summary-val">{startDate} · {utcS}</span>
         </div>
-        <div className="share-card-stat">
-          <div className="share-card-stat-value">{workdays}</div>
-          <div className="share-card-stat-label">{workdaysLabel}</div>
+        <div className="sc-summary-row">
+          <span className="sc-summary-key">{zh ? '结束' : 'End'}</span>
+          <span className="sc-summary-val accent">{endDate} · {utcE}</span>
         </div>
-        <div className="share-card-stat">
-          <div className="share-card-stat-value">{weekends}</div>
-          <div className="share-card-stat-label">{weekendsLabel}</div>
+        <div className="sc-summary-row">
+          <span className="sc-summary-key">{zh ? '总天数' : 'Total Days'}</span>
+          <span className="sc-summary-val">{isNegative ? `-${totalDays}` : totalDays} {d}</span>
         </div>
-        <div className="share-card-stat">
-          <div className="share-card-stat-value">
-            {absoluteDays}
-            <span style={{ fontSize: '0.6em', fontWeight: 400 }}>
-              {daysLabel}
-            </span>{' '}
-            {absoluteHours}
-            <span style={{ fontSize: '0.6em', fontWeight: 400 }}>
-              {hrsLabel}
-            </span>
-          </div>
-          <div className="share-card-stat-label">{absoluteLabel}</div>
+        <div className="sc-summary-row">
+          <span className="sc-summary-key">{zh ? '绝对时长' : 'Elapsed'}</span>
+          <span className="sc-summary-val">{absoluteDays}d {absoluteHours}h ({absTot}h)</span>
+        </div>
+        <div className="sc-summary-note">
+          {zh
+            ? `${workdays} 工作日 · ${weekends} 休息日${diff ? ' · 含 DST 修正' : ''}`
+            : `${workdays} workdays · ${weekends} weekends${diff ? ' · incl. DST' : ''}`}
         </div>
       </div>
 
-      {/* ── Ratio bar ── */}
-      {(workdayPercent > 0 || weekendPercent > 0) && (
-        <>
-          <div className="share-card-ratio-bar">
-            {workdayPercent > 0 && (
-              <div
-                className="share-card-ratio-fill-work"
-                style={{ width: `${workdayPercent}%` }}
-              />
-            )}
-            {weekendPercent > 0 && (
-              <div
-                className="share-card-ratio-fill-weekend"
-                style={{ width: `${weekendPercent}%` }}
-              />
-            )}
-          </div>
-          <div className="share-card-ratio-labels">
-            <span>
-              {workdaysLabel} · {Math.round(workdayPercent)}%
-            </span>
-            <span>
-              {Math.round(weekendPercent)}% · {weekendsLabel}
-            </span>
-          </div>
-        </>
-      )}
-
-      {/* ── Simplified timeline ── */}
-      <div className="share-card-timeline">
-        <div className="share-card-timeline-progress" />
-        <div className="share-card-timeline-node" style={{ left: '0%' }} />
-        <div className="share-card-timeline-label" style={{ left: '0%' }}>
-          {locale === 'zh' ? '起始' : 'Start'}
-        </div>
-        <div className="share-card-timeline-node end" style={{ left: '100%' }} />
-        <div className="share-card-timeline-label" style={{ left: '100%' }}>
-          {locale === 'zh' ? '结束' : 'End'}
-        </div>
-      </div>
-
-      {/* ── Info grid ── */}
-      <div className="share-card-info">
-        <div className="share-card-info-item">
-          <span className="share-card-info-label">
-            {zoneInfoLabel} ({locale === 'zh' ? '起' : 'Start'})
-          </span>
-          <span className="share-card-info-value">{startLabel}</span>
-        </div>
-        <div className="share-card-info-item">
-          <span className="share-card-info-label">
-            {zoneInfoLabel} ({locale === 'zh' ? '止' : 'End'})
-          </span>
-          <span className="share-card-info-value">{endLabel}</span>
-        </div>
-        <div className="share-card-info-item">
-          <span className="share-card-info-label">
-            {workdaysLabel}
-          </span>
-          <span className="share-card-info-value">{workdays} {daysLabel}</span>
-        </div>
-        <div className="share-card-info-item">
-          <span className="share-card-info-label">
-            {weekendsLabel}
-          </span>
-          <span className="share-card-info-value">{weekends} {daysLabel}</span>
-        </div>
-      </div>
-
-      {/* ── Footer ── */}
-      <div className="share-card-footer">
-        <span className="share-card-code">{code}</span>
-        <div className="share-card-brand">
-          <BrandIcon />
-          <span>{brandLabel}</span>
-        </div>
+      {/* Footer */}
+      <div className="sc-footer">
+        <span className="sc-code">#{code}</span>
+        <div className="sc-brand"><Brand /><span>ChronoSphere</span></div>
       </div>
     </div>
   );

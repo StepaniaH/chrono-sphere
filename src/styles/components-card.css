@@ -1,426 +1,252 @@
 /* ================================================================
-   Share Card Styles
-   Card dimensions: 3:4 ratio (900×1200 px at 1x, rendered at 2x)
-   Theme-aware via CSS variables — follows page Catppuccin theme
+   Share Card — infographic poster design
+   Inherits page theme (Catppuccin Frappé/Latte)
+   Donut charts + summary panel, Raycast-inspired
    ================================================================ */
 
-/* --- Card container (hidden render target) --- */
-
 .share-card {
-  width: 900px;
-  height: 1200px;
-  padding: 48px 44px;
+  width: 900px; height: 900px;
+  padding: 32px 40px 24px;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
+  display: flex; flex-direction: column;
+  gap: 0;
   background:
-    radial-gradient(ellipse 100% 30% at 50% 0%, color-mix(in srgb, var(--accent-primary) 8%, transparent), transparent),
+    radial-gradient(ellipse 55% 20% at 20% 8%, color-mix(in srgb, var(--accent-secondary) 5%, transparent), transparent),
+    radial-gradient(ellipse 45% 18% at 80% 88%, color-mix(in srgb, var(--accent-primary) 4%, transparent), transparent),
     var(--bg-page);
   color: var(--text-primary);
-  font-family: var(--font-body, system-ui, -apple-system, sans-serif);
-  position: relative;
-  overflow: hidden;
-  user-select: none;
+  font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, sans-serif;
+  overflow: hidden; user-select: none;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* --- Header / Custom text --- */
-
-.share-card-header {
-  text-align: center;
-  padding: 0 20px;
-  margin-bottom: 36px;
+/* ── Title bar ── */
+.sc-title-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; margin-bottom: 18px;
+}
+.sc-title {
+  font-size: 20px; font-weight: 600; color: var(--text-muted);
+  letter-spacing: 0.04em;
 }
 
-.share-card-custom-text {
-  font-family: var(--font-display, system-ui);
-  font-size: 40px;
-  font-weight: 700;
-  line-height: 1.3;
-  color: var(--text-primary);
-  letter-spacing: 0.03em;
-  word-break: break-word;
+/* ── Hero section ── */
+.sc-hero {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; flex-shrink: 0; margin-bottom: 16px;
+}
+.sc-hero-date {
+  font-size: 76px; font-weight: 650; line-height: 1.1;
+  color: var(--accent-primary); letter-spacing: 0.03em;
+}
+.sc-hero-dates {
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap; justify-content: center;
+}
+.sc-hero-date-plain {
+  font-size: 52px; font-weight: 600; line-height: 1.15;
+  color: var(--text-primary); letter-spacing: 0.02em;
+}
+.sc-hero-arrow {
+  font-size: 34px; color: var(--text-muted); opacity: 0.4;
+}
+.sc-hero-number {
+  font-size: 92px; font-weight: 650; line-height: 1;
+  color: var(--accent-primary); letter-spacing: 0.02em;
+}
+.sc-hero-unit {
+  font-size: 30px; font-weight: 500; color: var(--text-secondary);
+  margin-left: 8px;
+}
+.sc-hero-sub {
+  font-size: 20px; color: var(--text-muted); font-weight: 400;
+  letter-spacing: 0.01em; text-align: center;
 }
 
-/* --- Result box --- */
-
-.share-card-result {
-  background: var(--surface-muted);
+/* ── Pills ── */
+.sc-pills {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+}
+.sc-pill {
+  font-size: 18px; font-weight: 500; color: var(--text-secondary);
+  background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg, 16px);
-  padding: 28px 32px;
-  margin-bottom: 28px;
+  border-radius: 999px; padding: 8px 22px;
+  line-height: 1.4; letter-spacing: 0.01em;
 }
 
-.share-card-result-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
+/* ── Tags ── */
+.sc-tags {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+}
+.sc-tag {
+  font-size: 17px; font-weight: 550; border-radius: 999px;
+  padding: 7px 20px; border: 1px solid; letter-spacing: 0.01em;
 }
 
-.share-card-result-row:last-child {
-  margin-bottom: 0;
+/* ── Donut chart row ── */
+.sc-donuts {
+  display: flex; justify-content: center; align-items: flex-start;
+  gap: 56px; flex-shrink: 0; margin: 8px 0 16px;
 }
 
-.share-card-big-date {
-  font-family: var(--font-display, system-ui);
-  font-size: 52px;
-  font-weight: 800;
-  color: var(--accent-primary);
-  letter-spacing: 0.02em;
-}
-
-.share-card-arrow {
-  font-size: 28px;
-  color: var(--text-muted);
-  margin: 0 4px;
-}
-
-.share-card-meta {
-  font-size: 18px;
-  color: var(--text-secondary);
-}
-
-.share-card-lunar {
-  font-size: 17px;
-  color: var(--text-muted);
-  margin-top: 6px;
-  text-align: center;
-}
-
-/* --- Stats row --- */
-
-.share-card-stats {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  margin-bottom: 24px;
-}
-
-.share-card-stat {
-  text-align: center;
-}
-
-.share-card-stat-value {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--accent-primary);
-}
-
-.share-card-stat-label {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-/* --- Ratio bar --- */
-
-.share-card-ratio-bar {
-  height: 10px;
-  border-radius: 5px;
-  overflow: hidden;
+/* ── Summary panel (inset box, fills remaining space) ── */
+.sc-summary {
+  flex: 1; min-height: 60px;
+  display: flex; flex-direction: column; gap: 10px;
   background: var(--surface-muted);
-  border: 1px solid var(--border-subtle);
-  display: flex;
-  margin: 0 20px 16px;
+  border-radius: 18px; padding: 22px 28px;
+  box-shadow: 0 0 0 1px var(--border-strong), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.sc-summary-title {
+  font-size: 16px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 4px;
+}
+.sc-summary-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 18px; line-height: 1.5;
+}
+.sc-summary-key {
+  color: var(--text-muted); font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.sc-summary-val {
+  color: var(--text-primary); font-weight: 500;
+  font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+  font-size: 17px; letter-spacing: 0.02em;
+}
+.sc-summary-val.accent { color: var(--accent-primary); }
+.sc-summary-note {
+  font-size: 15px; color: var(--text-muted); margin-top: auto;
+  padding-top: 12px; border-top: 1px solid var(--border-subtle);
+  opacity: 0.7; letter-spacing: 0.01em;
 }
 
-.share-card-ratio-fill-work {
-  height: 100%;
-  background: linear-gradient(90deg, var(--color-success), color-mix(in srgb, var(--color-success) 70%, black));
+/* ── Info cells (lunar card) ── */
+.sc-cells {
+  display: flex; gap: 14px; flex-shrink: 0; margin-bottom: 24px;
 }
-
-.share-card-ratio-fill-weekend {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent-secondary), var(--accent-primary));
-}
-
-.share-card-ratio-labels {
-  display: flex;
-  justify-content: space-between;
-  margin: 0 20px 24px;
-  font-size: 14px;
-  color: var(--text-muted);
-}
-
-/* --- Info grid --- */
-
-.share-card-info {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 24px;
-  margin: 0 20px 24px;
-  font-size: 15px;
-  color: var(--text-secondary);
-}
-
-.share-card-info-item {
-  display: flex;
-  justify-content: space-between;
-}
-
-.share-card-info-label {
-  color: var(--text-muted);
-}
-
-.share-card-info-value {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-
-/* --- Auspicious / Inauspicious (lunar card) --- */
-
-.share-card-auspicious {
-  margin: 0 20px 20px;
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.share-card-auspicious-row {
-  margin-bottom: 6px;
-}
-
-.share-card-auspicious-label {
-  color: var(--color-success);
-  font-weight: 600;
-}
-
-.share-card-inaauspicious-label {
-  color: var(--color-error);
-  font-weight: 600;
-}
-
-/* --- Timeline (simplified) --- */
-
-.share-card-timeline {
-  position: relative;
-  height: 6px;
-  border-radius: 3px;
+.sc-cell {
+  flex: 1; text-align: center;
   background: var(--surface-muted);
-  margin: 0 20px 20px;
+  border-radius: 16px; padding: 22px 12px 18px;
+  box-shadow: 0 0 0 1px var(--border-strong), inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.sc-cell-value {
+  font-size: 30px; font-weight: 600; color: var(--text-primary);
+  line-height: 1.2; letter-spacing: 0.02em;
+}
+.sc-cell-label {
+  font-size: 15px; color: var(--text-muted); margin-top: 8px;
+  font-weight: 550; letter-spacing: 0.04em;
 }
 
-.share-card-timeline-progress {
-  position: absolute;
-  height: 100%;
-  border-radius: 3px;
-  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
-  width: 100%;
+/* ── Yi/Ji rows ── */
+.sc-yiji {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.sc-yiji-row {
+  display: flex; gap: 14px; align-items: baseline;
+  font-size: 19px; line-height: 1.6;
+}
+.sc-yiji-label {
+  font-size: 24px; font-weight: 600; flex-shrink: 0; min-width: 36px;
+}
+.sc-yiji-items {
+  color: var(--text-secondary); font-weight: 400; letter-spacing: 0.01em;
 }
 
-.share-card-timeline-node {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--bg-secondary);
-  border: 3px solid var(--accent-primary);
-  top: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-primary) 35%, transparent);
+/* ── Footer ── */
+.sc-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 8px; flex-shrink: 0; margin-top: 20px;
 }
-
-.share-card-timeline-node.end {
-  border-color: var(--accent-secondary);
+.sc-code {
+  font-family: monospace; font-size: 12px; color: var(--text-muted);
+  opacity: 0.3; letter-spacing: 0.04em;
 }
-
-.share-card-timeline-label {
-  position: absolute;
-  top: calc(100% + 10px);
-  transform: translateX(-50%);
-  font-size: 13px;
-  color: var(--text-muted);
-  white-space: nowrap;
+.sc-brand {
+  display: flex; align-items: center; gap: 5px; font-size: 12px;
+  color: var(--text-muted); opacity: 0.3; font-weight: 500; letter-spacing: 0.04em;
 }
+.sc-brand svg { width: 14px; height: 14px; opacity: 0.4; }
 
-/* --- Footer --- */
-
-.share-card-footer {
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-}
-
-.share-card-code {
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 15px;
-  color: var(--text-muted);
-  opacity: 0.6;
-  letter-spacing: 0.06em;
-}
-
-.share-card-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--text-muted);
-  opacity: 0.5;
-}
-
-.share-card-brand svg {
-  width: 22px;
-  height: 22px;
-  opacity: 0.6;
-}
-
-/* --- Theme: light override --- */
-
-.share-card[data-card-theme="light"] {
-  --bg-page: #eff1f5;
-  --text-primary: #4c4f69;
-  --text-secondary: #5c5f77;
-  --text-muted: #9ca0b0;
-  --surface-muted: #e6e9ef;
-  --surface-popover: #dce0e8;
-  --border-subtle: #ccd0da;
-  --accent-primary: #1e66f5;
-  --accent-secondary: #ea76cb;
-  --color-success: #40a02b;
-  --color-error: #d20f39;
-  --color-warning: #df8e1d;
-  --bg-secondary: #eff1f5;
-}
-
-/* --- Theme: dark override --- */
-
-.share-card[data-card-theme="dark"] {
-  --bg-page: #303446;
-  --text-primary: #c6d0f5;
-  --text-secondary: #a5adce;
-  --text-muted: #737994;
-  --surface-muted: #414559;
-  --surface-popover: #51576d;
-  --border-subtle: #626880;
-  --accent-primary: #8caaee;
-  --accent-secondary: #f4b8e4;
-  --color-success: #a6d189;
-  --color-error: #e78284;
-  --color-warning: #e5c890;
-  --bg-secondary: #303446;
-}
-
-/* --- Share button --- */
+/* ================================================================
+   Share button & modal (unchanged)
+   ================================================================ */
 
 .share-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: var(--radius-md, 8px);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-muted);
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--border-subtle); background: transparent;
+  color: var(--text-muted); cursor: pointer;
+  transition: opacity 0.15s; flex-shrink: 0;
 }
-
-.share-btn:hover {
-  background: var(--surface-popover);
-  color: var(--text-primary);
-}
-
-.share-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.share-btn-spinner {
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--border-subtle);
-  border-top-color: var(--accent-primary);
-  border-radius: 50%;
-  animation: share-spin 0.6s linear infinite;
-}
-
-@keyframes share-spin {
-  to { transform: rotate(360deg); }
-}
-
-.share-error {
-  font-size: 0.75rem;
-  color: var(--color-error);
-  margin-top: 4px;
-}
-
-/* --- Preview modal --- */
+.share-btn:hover { opacity: 0.7; color: var(--accent-primary); }
 
 .share-preview-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-  padding: 20px;
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10000; padding: 20px; animation: shareFadeIn 0.15s ease;
 }
-
+@keyframes shareFadeIn { from{opacity:0} to{opacity:1} }
 .share-preview-modal {
-  position: relative;
-  background: var(--bg-page);
-  border-radius: var(--radius-lg, 16px);
-  border: 1px solid var(--border-subtle);
-  max-width: 90vw;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px;
-  gap: 12px;
+  position: relative; background: var(--bg-page);
+  border-radius: 18px; border: 1px solid var(--border-subtle);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto;
+  display: flex; flex-direction: column; padding: 22px; gap: 14px;
+  animation: shareSlideUp 0.2s ease;
 }
-
+@keyframes shareSlideUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .share-preview-close {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 24px;
-  cursor: pointer;
-  line-height: 1;
+  position: absolute; top: 10px; right: 10px; background: none; border: none;
+  color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 50%;
+  opacity: 0.5; transition: opacity 0.15s;
 }
-
-.share-preview-image {
-  max-width: 100%;
-  max-height: calc(90vh - 120px);
-  border-radius: 8px;
-  border: 1px solid var(--border-subtle);
+.share-preview-close:hover { opacity: 1; }
+.share-modal-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); text-align: center; padding-right: 28px; letter-spacing: 0.03em; }
+.share-preview-body {
+  position: relative; min-height: 180px; display: flex; align-items: center;
+  justify-content: center; background: var(--surface-muted); border-radius: 14px;
+  border: 1px solid var(--border-subtle); overflow: hidden;
 }
-
-.share-preview-actions {
-  display: flex;
-  gap: 8px;
+.share-preview-loading { padding: 50px; }
+.share-preview-error { padding: 20px; color: var(--color-error); font-size: 0.8rem; text-align: center; }
+.share-preview-image { width: 100%; display: block; }
+.share-btn-spinner {
+  width: 22px; height: 22px; border: 2.5px solid var(--border-subtle);
+  border-top-color: var(--accent-primary); border-radius: 50%;
+  animation: share-spin 0.6s linear infinite;
 }
-
+@keyframes share-spin { to{transform:rotate(360deg)} }
+.share-template-section { display: flex; flex-direction: column; gap: 8px; }
+.share-template-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.share-template-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.share-template-pill {
+  padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border-subtle);
+  background: transparent; color: var(--text-secondary); font-size: 0.75rem; font-weight: 550;
+  cursor: pointer; transition: opacity 0.15s; letter-spacing: 0.02em;
+}
+.share-template-pill:hover { opacity: 0.7; }
+.share-template-pill.active { background: var(--surface-highlight); border-color: var(--border-accent); color: var(--accent-primary); }
+.share-text-input {
+  width: 100%; padding: 9px 12px; border-radius: 8px;
+  border: 1px solid var(--border-subtle); background: var(--surface-muted);
+  color: var(--text-primary); font-size: 0.8rem; outline: none;
+}
+.share-text-input:focus { border-color: var(--border-accent); }
+.share-text-input::placeholder { color: var(--text-muted); opacity: 0.4; }
+.share-preview-actions { display: flex; gap: 8px; }
 .share-preview-btn {
-  padding: 8px 20px;
-  border-radius: var(--radius-md, 8px);
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-muted);
-  color: var(--text-primary);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.15s;
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 9px 18px; border-radius: 999px; border: 1px solid var(--border-subtle);
+  background: transparent; color: var(--text-primary);
+  font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  letter-spacing: 0.03em; transition: opacity 0.15s;
 }
-
-.share-preview-btn:hover {
-  background: var(--surface-popover);
-}
-
-.share-preview-btn.primary {
-  background: var(--accent-primary);
-  color: #fff;
-  border-color: var(--accent-primary);
-}
-
-.share-preview-btn.primary:hover {
-  background: color-mix(in srgb, var(--accent-primary) 85%, black);
-}
+.share-preview-btn:hover { opacity: 0.7; }
+.share-preview-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.share-preview-btn.primary { background: var(--accent-primary); color: #fff; border-color: transparent; }
+.share-preview-btn.primary:hover { opacity: 0.85; }
