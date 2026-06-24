@@ -5,6 +5,10 @@ import type { DateResult, DstTransition } from '../utils/dateUtils';
 import { TimezoneSelect } from './TimezoneSelect';
 import { DstAuditor } from './DstAuditor';
 import { RangeVisualizer } from './RangeVisualizer';
+import { ShareButton } from './ShareButton';
+import type { CardOffsetData } from './CardRenderer';
+import { encodeCardCode } from '../utils/cardCodec';
+import { CARD_TEMPLATES, FREE_TEXT_TEMPLATE_ID, fillTemplate } from '../utils/cardTemplates';
 import { DateTime } from 'luxon';
 import { usePreferences } from '../context/usePreferences';
 
@@ -25,6 +29,8 @@ export const OffsetCalculator: React.FC = () => {
   const [offsetStr, setOffsetStr] = useState('10');
   const [mode, setMode] = useState<'thDay' | 'interval'>('interval');
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
+  const [templateId, setTemplateId] = useState(0);
+  const [customText, setCustomText] = useState('');
 
   const offset = parseInt(offsetStr, 10);
   const signedOffset = direction === 'backward' ? -Math.abs(offset) : Math.abs(offset);
@@ -60,6 +66,87 @@ export const OffsetCalculator: React.FC = () => {
     const inclusive = Math.abs(signedOffset) + (mode === 'interval' ? 1 : 0);
     return signedOffset >= 0 ? inclusive : -inclusive;
   }, [signedOffset, mode]);
+
+  // Build card data
+  const cardData = useMemo<CardOffsetData | null>(() => {
+    if (!result || isNaN(offset)) return null;
+
+    const absOffset = Math.abs(offset);
+
+    // Build custom text from template
+    const template = CARD_TEMPLATES.find(t => t.id === templateId);
+    let displayText = customText;
+    if (template && templateId !== FREE_TEXT_TEMPLATE_ID) {
+      const vars: Record<string, string> = { N: String(absOffset) };
+      if (template.userVars.includes('事件')) vars['事件'] = customText || '...';
+      if (template.userVars.includes('项目名')) vars['项目名'] = customText || '...';
+      displayText = fillTemplate(template, vars);
+    }
+
+    // Calculate workday/weekend counts for card (same as visualizer)
+    let workdays = 0, weekends = 0;
+    try {
+      const s = DateTime.fromISO(startDate, { zone: 'UTC' }).startOf('day');
+      const e = DateTime.fromISO(result.dateStr, { zone: 'UTC' }).startOf('day');
+      const [st, en] = s <= e ? [s, e] : [e, s];
+      const dayCount = Math.round(en.diff(st, 'days').days) + 1;
+      const startWd = st.weekday;
+      const fullWeeks = Math.floor(dayCount / 7);
+      workdays = fullWeeks * 5;
+      weekends = fullWeeks * 2;
+      for (let i = 0; i < (dayCount % 7); i++) {
+        const wd = ((startWd + i - 1) % 7) + 1;
+        if (wd <= 5) workdays++; else weekends++;
+      }
+    } catch { /* ignore */ }
+
+    const total = workdays + weekends || 1;
+    const workdayPercent = Math.round((workdays / total) * 100);
+    const weekendPercent = 100 - workdayPercent;
+
+    const lunarDetails = getLunarDetails(result.dateStr, zone);
+
+    // Generate code
+    const code = encodeCardCode({
+      version: 0,
+      tab: 'offset',
+      theme: 'auto',
+      templateId,
+      customText,
+      params: {
+        zone,
+        startDate,
+        offset,
+        mode,
+        direction,
+      },
+    });
+
+    return {
+      customText: displayText || `${absOffset} ${locale === 'zh' ? '天' : 'days'}`,
+      startDate,
+      resultDate: result.dateStr,
+      weekday: result.weekday,
+      zone,
+      offsetDays: absOffset,
+      isBackward: direction === 'backward',
+      workdays,
+      weekends,
+      workdayPercent,
+      weekendPercent,
+      lunarStr: lunarDetails?.lunarStr,
+      yearGanZhi: lunarDetails?.yearGanZhi,
+      shengXiao: lunarDetails?.shengXiao,
+      jieQi: lunarDetails?.jieQi,
+      festivals: lunarDetails?.festivals,
+      code,
+      theme: 'auto' as const,
+      locale,
+    };
+  }, [result, offset, startDate, zone, direction, mode, templateId, customText, locale]);
+
+  // Filter templates for offset tab
+  const offsetTemplates = CARD_TEMPLATES.filter(t => t.tabs.includes('offset'));
 
   return (
     <div className="calculator-grid fade-in">
@@ -154,6 +241,43 @@ export const OffsetCalculator: React.FC = () => {
             />
           </div>
         </div>
+
+        {/* Template selector */}
+        {result && (
+          <div className="form-group">
+            <label className="form-label">{locale === 'zh' ? '卡片文案' : 'Card text'}</label>
+            <div className="segmented-control" style={{ flexWrap: 'wrap' }}>
+              {offsetTemplates.map(tmpl => (
+                <button
+                  key={tmpl.id}
+                  type="button"
+                  className={`segmented-btn ${templateId === tmpl.id ? 'active' : ''}`}
+                  onClick={() => { setTemplateId(tmpl.id); setCustomText(''); }}
+                >
+                  {locale === 'zh' ? tmpl.labelZh : tmpl.labelEn}
+                </button>
+              ))}
+              <button
+                type="button"
+                className={`segmented-btn ${templateId === FREE_TEXT_TEMPLATE_ID ? 'active' : ''}`}
+                onClick={() => setTemplateId(FREE_TEXT_TEMPLATE_ID)}
+              >
+                {locale === 'zh' ? '自由输入' : 'Custom'}
+              </button>
+            </div>
+            {(templateId === FREE_TEXT_TEMPLATE_ID || CARD_TEMPLATES.find(t => t.id === templateId)?.userVars.length) && (
+              <input
+                type="text"
+                className="form-input"
+                style={{ marginTop: '6px' }}
+                placeholder={locale === 'zh' ? '输入文案（最多30字）' : 'Enter text (max 30 chars)'}
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value.slice(0, 30))}
+                maxLength={30}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Results panel */}
@@ -170,7 +294,16 @@ export const OffsetCalculator: React.FC = () => {
         ) : (
           <div className="results-content">
             <div>
-              <div className="result-card-heading">{t('offset.resultTitle')}</div>
+              <div className="result-card-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{t('offset.resultTitle')}</span>
+                {cardData && (
+                  <ShareButton
+                    cardType="offset"
+                    cardData={cardData}
+                    locale={locale}
+                  />
+                )}
+              </div>
               <div style={{ marginTop: '15px' }}>
                 <div className="big-date-display">{result.dateStr}</div>
                 <div className="date-meta-info">

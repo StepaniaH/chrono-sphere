@@ -155,6 +155,15 @@ const zh = {
     shiftBackward: '时钟向后拨慢 {hours} 小时。这一天多 {hours} 小时（通常从 2:00 重复一次 1:00）。',
     shiftMinutes: '（{minutes} 分钟）',
   },
+  share: {
+    title: '生成分享卡片',
+    button: '分享',
+    preview: '卡片预览',
+    download: '下载 PNG',
+    copyCode: '复制编码',
+    close: '关闭',
+    copied: '已复制',
+  },
 } as const;
 
 const en = {
@@ -305,6 +314,15 @@ const en = {
     shiftForward: 'Clocks move forward by {hours} hour(s). This day is {hours} hour(s) shorter (usually from 2:00 to 3:00).',
     shiftBackward: 'Clocks move backward by {hours} hour(s). This day is {hours} hour(s) longer (usually 1:00 repeats after 2:00).',
     shiftMinutes: '({minutes} minutes)',
+  },
+  share: {
+    title: 'Generate share card',
+    button: 'Share',
+    preview: 'Card preview',
+    download: 'Download PNG',
+    copyCode: 'Copy code',
+    close: 'Close',
+    copied: 'Copied',
   },
 } as const;
 

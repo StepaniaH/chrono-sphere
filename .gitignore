@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .playwright-mcp/
+.hermes/
 chronosphere-*.png
 
 # Editor directories and files
