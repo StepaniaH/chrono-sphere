@@ -59,6 +59,25 @@ describe('calculateOffset', () => {
       expect(result.success).toBe(false);
       expect(result.error).toContain('1');
     });
+
+    it('should handle backward thDay correctly', () => {
+      // "往回第2天" from 6/1 → 5/31 (= start - 1 day)
+      const result = calculateOffset('2026-06-01', -2, 'thDay', 'Asia/Shanghai');
+      expect(result.success).toBe(true);
+      expect(result.result!.dateStr).toBe('2026-05-31');
+    });
+
+    it('should handle backward thDay with X=1 (same day)', () => {
+      const result = calculateOffset('2026-06-01', -1, 'thDay', 'Asia/Shanghai');
+      expect(result.success).toBe(true);
+      expect(result.result!.dateStr).toBe('2026-06-01');
+    });
+
+    it('should reject backward thDay with X=0', () => {
+      const result = calculateOffset('2026-06-01', -0, 'thDay', 'Asia/Shanghai', 'zh');
+      // -0 is 0, abs(0) < 1 → error
+      expect(result.success).toBe(false);
+    });
   });
 
   describe('error handling', () => {

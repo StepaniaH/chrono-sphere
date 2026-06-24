@@ -66,10 +66,11 @@ export function calculateOffset(
 
     let target: DateTime;
     if (mode === 'thDay') {
-      if (offset < 1) {
+      if (Math.abs(offset) < 1) {
         return { success: false, error: translate(locale, 'offset.thDayMinimum') };
       }
-      target = start.plus({ days: offset - 1 });
+      const sign = offset >= 0 ? 1 : -1;
+      target = start.plus({ days: offset - sign });
     } else {
       target = start.plus({ days: offset });
     }
