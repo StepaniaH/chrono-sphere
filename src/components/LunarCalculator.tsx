@@ -171,17 +171,16 @@ export const LunarCalculator: React.FC = () => {
         </div>
 
         {/* Lunar Date Picker */}
-        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '15px', background: 'var(--surface-raised)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="lunar-picker-box">
+          <h3 className="interval-section-heading start">
             <span>●</span> {t('lunar.startTitle')}
           </h3>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
+
+          <div className="lunar-picker-grid">
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('lunar.year')}</label>
-              <select 
-                className="form-input" 
-                style={{ paddingLeft: '12px' }}
+              <label className="form-label">{t('lunar.year')}</label>
+              <select
+                className="form-input"
                 value={year}
                 onChange={e => setYear(parseInt(e.target.value, 10))}
               >
@@ -192,10 +191,9 @@ export const LunarCalculator: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('lunar.month')}</label>
-              <select 
-                className="form-input" 
-                style={{ paddingLeft: '12px' }}
+              <label className="form-label">{t('lunar.month')}</label>
+              <select
+                className="form-input"
                 value={month}
                 onChange={e => setMonth(parseInt(e.target.value, 10))}
               >
@@ -206,10 +204,9 @@ export const LunarCalculator: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ fontSize: '0.75rem' }}>{t('lunar.day')}</label>
-              <select 
-                className="form-input" 
-                style={{ paddingLeft: '12px' }}
+              <label className="form-label">{t('lunar.day')}</label>
+              <select
+                className="form-input"
                 value={availableDays.length === 0 ? '' : effectiveDay}
                 onChange={e => setDay(parseInt(e.target.value, 10))}
                 disabled={availableDays.length === 0}
@@ -228,21 +225,21 @@ export const LunarCalculator: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+          <div className="lunar-leap-row">
             <input
               type="checkbox"
               id="isLeap"
+              className="lunar-leap-checkbox"
               checked={isLeap}
               onChange={e => setIsLeap(e.target.checked)}
-              style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--accent-primary)' }}
             />
-            <label htmlFor="isLeap" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+            <label htmlFor="isLeap" className="lunar-leap-label">
               {t('lunar.leapMonth')}
             </label>
           </div>
 
           {startSolarDate && startLunarDetails && (
-            <div style={{ background: 'var(--surface-raised)', padding: '10px', borderRadius: '4px', border: '1px dashed var(--border-subtle)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+            <div className="lunar-solar-preview">
               <div>{t('lunar.startSolar')}：<strong>{startSolarDate}</strong></div>
               <div>{t('lunar.ganzhi')}：{startLunarDetails.yearGanZhi} · {startLunarDetails.shengXiao}</div>
             </div>
@@ -315,11 +312,11 @@ export const LunarCalculator: React.FC = () => {
             {/* Target Lunar Date */}
             <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '15px' }}>
               <div className="result-card-heading">{t('lunar.targetLunar')}</div>
-              <div style={{ textAlign: 'center', margin: '12px 0' }}>
-                <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--accent-primary)', textShadow: '0 0 10px rgba(99, 102, 241, 0.2)' }}>
+            <div className="lunar-result-display">
+                <div className="lunar-result-str">
                   {targetLunarDetails.lunarStr}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                <div className="lunar-result-pills">
                   <span className="meta-pill">{targetLunarDetails.yearGanZhi}</span>
                   <span className="meta-pill">{t('lunar.zodiacLabel')}{targetLunarDetails.shengXiao}</span>
                   {targetLunarDetails.jieQi && (
@@ -337,17 +334,17 @@ export const LunarCalculator: React.FC = () => {
             </div>
 
             {/* Almanac Daily Yi & Ji (黄历宜忌) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', borderTop: '1px solid var(--border-subtle)', paddingTop: '15px' }}>
-              <div style={{ background: 'var(--surface-raised)', border: '1px solid color-mix(in srgb, var(--color-success) 18%, var(--border-subtle))', borderRadius: 'var(--radius-sm)', padding: '10px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-success)', borderBottom: '1px solid color-mix(in srgb, var(--color-success) 18%, var(--border-subtle))', paddingBottom: '4px', marginBottom: '6px' }}>
+            <div className="lunar-almanac-grid">
+              <div className="lunar-almanac-box auspicious">
+                <div className="lunar-almanac-heading auspicious">
                   {t('lunar.auspicious')}
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                <div className="lunar-almanac-tags">
                   {targetLunarDetails.yi.length === 0 ? (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('lunar.noAuspicious')}</span>
+                      <span className="lunar-almanac-empty">{t('lunar.noAuspicious')}</span>
                   ) : (
                     targetLunarDetails.yi.slice(0, 8).map(y => (
-                      <span key={y} style={{ fontSize: '0.75rem', background: 'color-mix(in srgb, var(--color-success) 12%, var(--surface-raised))', padding: '2px 6px', borderRadius: '4px', color: 'var(--color-success)' }}>
+                      <span key={y} className="lunar-almanac-tag auspicious">
                         {y}
                       </span>
                     ))
@@ -355,16 +352,16 @@ export const LunarCalculator: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ background: 'var(--surface-raised)', border: '1px solid color-mix(in srgb, var(--color-error) 18%, var(--border-subtle))', borderRadius: 'var(--radius-sm)', padding: '10px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-error)', borderBottom: '1px solid color-mix(in srgb, var(--color-error) 18%, var(--border-subtle))', paddingBottom: '4px', marginBottom: '6px' }}>
+              <div className="lunar-almanac-box inauspicious">
+                <div className="lunar-almanac-heading inauspicious">
                   {t('lunar.inauspicious')}
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                <div className="lunar-almanac-tags">
                   {targetLunarDetails.ji.length === 0 ? (
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('lunar.noInauspicious')}</span>
+                      <span className="lunar-almanac-empty">{t('lunar.noInauspicious')}</span>
                   ) : (
                     targetLunarDetails.ji.slice(0, 8).map(j => (
-                      <span key={j} style={{ fontSize: '0.75rem', background: 'color-mix(in srgb, var(--color-error) 12%, var(--surface-raised))', padding: '2px 6px', borderRadius: '4px', color: 'var(--color-error)' }}>
+                      <span key={j} className="lunar-almanac-tag inauspicious">
                         {j}
                       </span>
                     ))

@@ -154,14 +154,14 @@ export const RangeVisualizer: React.FC<RangeVisualizerProps> = ({
   };
 
   return (
-    <div className="range-visualizer fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-      <div className="result-card-heading">
-        <Activity size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-        <span>{t('visualizer.title')}</span>
+    <div className="range-visualizer fade-in">
+      <div className="visualizer-header-row">
+        <Activity size={14} />
+        <span className="result-card-heading" style={{ border: 'none', padding: 0, margin: 0, fontSize: '0.82rem' }}>{t('visualizer.title')}</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+      <div>
+        <div className="ratio-stats-row">
           <span>
             {t('visualizer.workdayShare')}：{Math.round(workdayPercent)}% ({workdays}{t('interval.totalDaysUnit')})
           </span>
@@ -169,32 +169,24 @@ export const RangeVisualizer: React.FC<RangeVisualizerProps> = ({
             {t('visualizer.weekendShare')}：{Math.round(weekendPercent)}% ({weekends}{t('interval.totalDaysUnit')})
           </span>
         </div>
-        <div style={{ display: 'flex', height: '10px', width: '100%', borderRadius: '50px', overflow: 'hidden', background: 'var(--surface-muted)', border: '1px solid var(--border-subtle)' }}>
+        <div className="workday-ratio-bar">
           {workdays > 0 && (
             <div
-              style={{
-                width: `${workdayPercent}%`,
-                height: '100%',
-                background: 'linear-gradient(90deg, #10b981, #059669)',
-                boxShadow: '0 0 8px rgba(16, 185, 129, 0.3)',
-              }}
+              className="workday-ratio-fill"
+              style={{ width: `${workdayPercent}%` }}
             />
           )}
           {weekends > 0 && (
             <div
-              style={{
-                width: `${weekendPercent}%`,
-                height: '100%',
-                background: 'linear-gradient(90deg, #8b5cf6, #d946ef)',
-                boxShadow: '0 0 8px rgba(139, 92, 246, 0.3)',
-              }}
+              className="weekend-ratio-fill"
+              style={{ width: `${weekendPercent}%` }}
             />
           )}
         </div>
       </div>
 
       <div style={{ padding: '0 10px', marginTop: '5px' }}>
-        <div className="timeline-track" style={{ height: '4px', background: 'var(--surface-line)' }}>
+        <div className="timeline-track">
           <div className="timeline-progress" style={{ width: '100%', left: '0%' }} />
           <div className="timeline-node start" style={{ left: '0%' }} />
 
@@ -202,46 +194,11 @@ export const RangeVisualizer: React.FC<RangeVisualizerProps> = ({
             <div
               key={marker.key}
               className="timeline-marker-wrapper"
-              style={{
-                position: 'absolute',
-                left: `${marker.percent}%`,
-                top: '50%',
-                transform: 'translate(-50%, -50%)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                zIndex: 10,
-              }}
+              style={{ left: `${marker.percent}%` }}
             >
+              <div className={`timeline-marker-dot ${marker.type}`} />
               <div
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background:
-                    marker.type === 'dst'
-                      ? 'var(--color-warning)'
-                      : marker.type === 'holiday'
-                        ? 'var(--accent-secondary)'
-                        : 'var(--color-success)',
-                  border: '2px solid var(--bg-page)',
-                  boxShadow: '0 0 6px rgba(255, 255, 255, 0.4)',
-                }}
-              />
-              <div
-                style={{
-                  whiteSpace: 'nowrap',
-                  fontSize: '0.65rem',
-                  color: 'var(--text-secondary)',
-                  marginTop: '12px',
-                  background: 'var(--surface-popover)',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  border: '1px solid var(--border-subtle)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '3px',
-                }}
+                className="timeline-marker-label"
               >
                 {marker.type === 'dst' && <Clock size={10} style={{ color: 'var(--color-warning)' }} />}
                 {marker.type === 'holiday' && <Sparkles size={10} style={{ color: 'var(--accent-secondary)' }} />}
@@ -255,32 +212,22 @@ export const RangeVisualizer: React.FC<RangeVisualizerProps> = ({
         </div>
 
         <div className="timeline-labels" style={{ marginTop: '16px' }}>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.8rem' }}>{startDateStr}</div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+          <div className="timeline-label-left">
+            <div className="timeline-label-date">{startDateStr}</div>
+            <div className="timeline-label-meta">
               {t('visualizer.start')} {zoneStart !== 'UTC' && `(${zoneLabel(zoneStart)})`}
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', alignSelf: 'center' }}>
-            <div
-              style={{
-                fontWeight: 700,
-                color: 'var(--accent-primary)',
-                background: 'var(--surface-highlight)',
-                padding: '2px 10px',
-                borderRadius: '50px',
-                border: '1px solid var(--border-accent)',
-                fontSize: '0.75rem',
-              }}
-            >
+          <div className="timeline-label-center">
+            <div className="visualizer-span-badge">
               {totalDays < 0 ? t('visualizer.reversing', { days: absDays }) : t('visualizer.spanning', { days: absDays })}
             </div>
           </div>
 
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.8rem' }}>{endDateStr}</div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+          <div className="timeline-label-right">
+            <div className="timeline-label-date">{endDateStr}</div>
+            <div className="timeline-label-meta">
               {t('visualizer.end')} {endZone !== 'UTC' && `(${zoneLabel(endZone)})`}
             </div>
           </div>

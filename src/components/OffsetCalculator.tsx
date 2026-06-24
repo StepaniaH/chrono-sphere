@@ -155,20 +155,20 @@ export const OffsetCalculator: React.FC = () => {
                   const details = getLunarDetails(result.dateStr, zone);
                   if (!details) return null;
                   return (
-                    <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', borderTop: '1px dashed var(--border-subtle)', paddingTop: '12px' }}>
-                      <div style={{ fontSize: '1.25rem', color: 'var(--accent-primary)', fontWeight: 700 }}>
+                    <div className="offset-lunar-display">
+                      <div className="offset-lunar-title">
                         {t('offset.lunarTitle')} {details.lunarStr}
                       </div>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <div className="offset-lunar-pills">
                         <span className="meta-pill">{details.yearGanZhi}</span>
                         <span className="meta-pill">{t('lunar.zodiacLabel')}{details.shengXiao}</span>
                         {details.jieQi && (
-                          <span className="meta-pill" style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)', background: 'rgba(16, 185, 129, 0.05)' }}>
+                          <span className="meta-pill jieqi">
                             {details.jieQi}
                           </span>
                         )}
                         {details.festivals.map(f => (
-                          <span key={f} className="meta-pill" style={{ borderColor: 'var(--accent-secondary)', color: 'var(--accent-secondary)', background: 'rgba(168, 85, 247, 0.05)' }}>
+                          <span key={f} className="meta-pill festival">
                             {f}
                           </span>
                         ))}
