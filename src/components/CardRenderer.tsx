@@ -61,6 +61,7 @@ export interface CardLunarData {
   shengXiao: string;
   solarDate: string;
   weekday: string;
+  zone: string;
   jieQi?: string;
   festivals?: string[];
   auspicious?: string[];
