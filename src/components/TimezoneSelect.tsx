@@ -103,7 +103,7 @@ export const TimezoneSelect: React.FC<TimezoneSelectProps> = ({ value, onChange 
               setSearchQuery('');
             }
           }}
-          aria-label={isOpen ? 'Close timezone menu' : 'Open timezone menu'}
+          aria-label={isOpen ? t('timezone.closeMenu') : t('timezone.openMenu')}
         >
           <ChevronDown size={16} className={`timezone-chevron ${isOpen ? 'open' : ''}`} />
         </button>

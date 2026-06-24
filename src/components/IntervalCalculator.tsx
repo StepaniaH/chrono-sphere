@@ -79,16 +79,16 @@ export const IntervalCalculator: React.FC = () => {
       {/* Form controls */}
       <div className="form-section">
         {/* Start Date Configuration */}
-        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '15px', background: 'var(--surface-raised)' }}>
-          <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-primary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="interval-config-box">
+          <h3 className="interval-section-heading start">
             <span>●</span> {t('interval.startConfig')}
           </h3>
-          <div className="form-group" style={{ marginBottom: '12px' }}>
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('interval.startZone')}</label>
+          <div className="form-group">
+            <label className="form-label interval-sub-label">{t('interval.startZone')}</label>
             <TimezoneSelect value={startZone} onChange={setStartZone} />
           </div>
           <div className="form-group">
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('interval.startDate')}</label>
+            <label className="form-label interval-sub-label">{t('interval.startDate')}</label>
             <div className="input-icon-wrapper">
               <Calendar className="input-icon" size={18} />
               <input
@@ -99,7 +99,7 @@ export const IntervalCalculator: React.FC = () => {
               />
             </div>
             {startDate && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: '4px', marginTop: '2px' }}>
+              <span className="interval-lunar-hint">
                 {(() => {
                   const d = getLunarDetails(startDate, startZone);
                   return d ? `${t('offset.lunarTitle')}：${d.lunarStr} (${d.yearGanZhi} · ${d.shengXiao})` : '';
@@ -110,16 +110,16 @@ export const IntervalCalculator: React.FC = () => {
         </div>
 
         {/* End Date Configuration */}
-        <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '15px', background: 'var(--surface-raised)' }}>
-          <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--accent-secondary)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="interval-config-box">
+          <h3 className="interval-section-heading end">
             <span>●</span> {t('interval.endConfig')}
           </h3>
-          <div className="form-group" style={{ marginBottom: '12px' }}>
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('interval.endZone')}</label>
+          <div className="form-group">
+            <label className="form-label interval-sub-label">{t('interval.endZone')}</label>
             <TimezoneSelect value={endZone} onChange={setEndZone} />
           </div>
           <div className="form-group">
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>{t('interval.endDate')}</label>
+            <label className="form-label interval-sub-label">{t('interval.endDate')}</label>
             <div className="input-icon-wrapper">
               <Calendar className="input-icon" size={18} />
               <input
@@ -130,7 +130,7 @@ export const IntervalCalculator: React.FC = () => {
               />
             </div>
             {endDate && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: '4px', marginTop: '2px' }}>
+              <span className="interval-lunar-hint">
                 {(() => {
                   const d = getLunarDetails(endDate, endZone);
                   return d ? `${t('offset.lunarTitle')}：${d.lunarStr} (${d.yearGanZhi} · ${d.shengXiao})` : '';
@@ -143,12 +143,11 @@ export const IntervalCalculator: React.FC = () => {
         {/* Inclusion Rules */}
         <div className="form-group">
           <label className="form-label">{t('interval.inclusion')}</label>
-          <div className="segmented-control" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px', background: 'var(--surface-muted)', padding: '4px' }}>
+          <div className="inclusion-grid">
             <button
               type="button"
               className={`segmented-btn ${inclusion === 'both' ? 'active' : ''}`}
               onClick={() => setInclusion('both')}
-              style={{ fontSize: '0.8rem' }}
             >
               {t('interval.both')}
             </button>
@@ -156,7 +155,6 @@ export const IntervalCalculator: React.FC = () => {
               type="button"
               className={`segmented-btn ${inclusion === 'start' ? 'active' : ''}`}
               onClick={() => setInclusion('start')}
-              style={{ fontSize: '0.8rem' }}
             >
               {t('interval.startOnly')}
             </button>
@@ -164,7 +162,6 @@ export const IntervalCalculator: React.FC = () => {
               type="button"
               className={`segmented-btn ${inclusion === 'end' ? 'active' : ''}`}
               onClick={() => setInclusion('end')}
-              style={{ fontSize: '0.8rem' }}
             >
               {t('interval.endOnly')}
             </button>
@@ -172,12 +169,11 @@ export const IntervalCalculator: React.FC = () => {
               type="button"
               className={`segmented-btn ${inclusion === 'exclude' ? 'active' : ''}`}
               onClick={() => setInclusion('exclude')}
-              style={{ fontSize: '0.8rem' }}
             >
               {t('interval.exclude')}
             </button>
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '4px', marginTop: '4px' }}>
+          <span className="inclusion-help">
             {inclusion === 'both' && t('interval.bothHelp')}
             {inclusion === 'start' && t('interval.startHelp')}
             {inclusion === 'end' && t('interval.endHelp')}
@@ -207,7 +203,7 @@ export const IntervalCalculator: React.FC = () => {
                 </span>
                 <span className="big-result-unit">{t('interval.totalDaysUnit')}</span>
                 {result.isNegative && (
-                  <div style={{ fontSize: '0.8rem', color: 'var(--color-error)', fontWeight: 600, marginTop: '4px' }}>
+                  <div className="negative-note">
                     {t('interval.negativeNote')}
                   </div>
                 )}
@@ -226,31 +222,31 @@ export const IntervalCalculator: React.FC = () => {
             </div>
 
             {/* Absolute elapsed time breakdown */}
-            <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div className="stat-label" style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <div className="absolute-time-block">
+              <div className="absolute-time-label">
                 {t('interval.absoluteTime')}
               </div>
-              <div style={{ textAlign: 'center', fontSize: '1.25rem', fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--accent-secondary)' }}>
+              <div className="absolute-time-value">
                 {t('interval.hoursUnit', { days: result.absoluteDays, hours: result.absoluteHours })}
               </div>
             </div>
 
             {/* Lunar Calendar equivalents */}
-            <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div className="interval-lunar-block">
               <div className="result-card-heading" style={{ border: 'none', padding: 0, fontSize: '0.75rem', textTransform: 'none', letterSpacing: '0.05em' }}>{t('interval.lunarInfo')}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>{t('interval.startLunar')}</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                <div className="interval-lunar-row">
+                  <span className="interval-lunar-label">{t('interval.startLunar')}</span>
+                  <span className="interval-lunar-value">
                     {(() => {
                       const d = getLunarDetails(startDate, startZone);
                       return d ? `${d.lunarStr} (${d.yearGanZhi} · ${d.shengXiao})` : '';
                     })()}
                   </span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>{t('interval.endLunar')}</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                <div className="interval-lunar-row">
+                  <span className="interval-lunar-label">{t('interval.endLunar')}</span>
+                  <span className="interval-lunar-value">
                     {(() => {
                       const d = getLunarDetails(endDate, endZone);
                       return d ? `${d.lunarStr} (${d.yearGanZhi} · ${d.shengXiao})` : '';

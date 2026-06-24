@@ -62,8 +62,10 @@ function App() {
         <p className="app-subtitle">{t('app.subtitle')}</p>
       </header>
 
-      <div className="tabs-container">
+      <div className="tabs-container" role="tablist" aria-label={t('tabs.label') || 'Calculator tabs'}>
         <button
+          role="tab"
+          aria-selected={activeTab === 'offset'}
           className={`tab-btn ${activeTab === 'offset' ? 'active' : ''}`}
           onClick={() => setActiveTab('offset')}
         >
@@ -71,6 +73,8 @@ function App() {
           {t('tabs.offset')}
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'interval'}
           className={`tab-btn ${activeTab === 'interval' ? 'active' : ''}`}
           onClick={() => setActiveTab('interval')}
         >
@@ -78,6 +82,8 @@ function App() {
           {t('tabs.interval')}
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === 'lunar'}
           className={`tab-btn ${activeTab === 'lunar' ? 'active' : ''}`}
           onClick={() => setActiveTab('lunar')}
         >

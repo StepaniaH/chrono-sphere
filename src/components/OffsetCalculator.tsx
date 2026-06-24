@@ -24,34 +24,42 @@ export const OffsetCalculator: React.FC = () => {
   const [startDate, setStartDate] = useState(() => getTodayStr(zone));
   const [offsetStr, setOffsetStr] = useState('10');
   const [mode, setMode] = useState<'thDay' | 'interval'>('interval');
+  const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
+
+  const offset = parseInt(offsetStr, 10);
+  const signedOffset = direction === 'backward' ? -Math.abs(offset) : Math.abs(offset);
   
   const { result, transitions, error } = useMemo<{
     result: DateResult | null;
     transitions: DstTransition[];
     error: string | null;
   }>(() => {
-    const offset = parseInt(offsetStr, 10);
-
     if (!startDate) {
       return { result: null, transitions: [], error: null };
     }
 
-    if (isNaN(offset)) {
+    if (isNaN(signedOffset)) {
       return { result: null, transitions: [], error: t('offset.invalidNumber') };
     }
 
-    const calc = calculateOffset(startDate, offset, mode, zone, locale);
+    const calc = calculateOffset(startDate, signedOffset, mode, zone, locale);
     if (calc.success && calc.result) {
       const dst = detectDstTransitions(startDate, calc.result.dateStr, zone, locale);
       return { result: calc.result, transitions: dst, error: null };
     }
 
     return { result: null, transitions: [], error: calc.error || t('offset.invalidCalculation') };
-  }, [startDate, offsetStr, mode, zone, locale, t]);
+  }, [startDate, signedOffset, mode, zone, locale, t]);
 
   const handleOffsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOffsetStr(e.target.value);
   };
+
+  const visualizerTotalDays = useMemo(() => {
+    if (isNaN(signedOffset)) return 0;
+    const inclusive = Math.abs(signedOffset) + (mode === 'interval' ? 1 : 0);
+    return signedOffset >= 0 ? inclusive : -inclusive;
+  }, [signedOffset, mode]);
 
   return (
     <div className="calculator-grid fade-in">
@@ -91,19 +99,45 @@ export const OffsetCalculator: React.FC = () => {
               className={`segmented-btn ${mode === 'interval' ? 'active' : ''}`}
               onClick={() => setMode('interval')}
             >
-              {t('offset.intervalMode')}
+              {direction === 'forward'
+                ? t('offset.intervalMode')
+                : t('offset.intervalModeBackward')}
             </button>
             <button
               type="button"
               className={`segmented-btn ${mode === 'thDay' ? 'active' : ''}`}
               onClick={() => setMode('thDay')}
             >
-              {t('offset.thDayMode')}
+              {direction === 'forward'
+                ? t('offset.thDayMode')
+                : t('offset.thDayModeBackward')}
             </button>
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '4px' }}>
-            {mode === 'interval' ? t('offset.intervalHelp') : t('offset.thDayHelp')}
+            {mode === 'interval'
+              ? (direction === 'forward' ? t('offset.intervalHelp') : t('offset.intervalHelpBackward'))
+              : (direction === 'forward' ? t('offset.thDayHelp') : t('offset.thDayHelpBackward'))}
           </span>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">{t('offset.direction')}</label>
+          <div className="segmented-control">
+            <button
+              type="button"
+              className={`segmented-btn ${direction === 'forward' ? 'active' : ''}`}
+              onClick={() => setDirection('forward')}
+            >
+              {t('offset.forward')}
+            </button>
+            <button
+              type="button"
+              className={`segmented-btn ${direction === 'backward' ? 'active' : ''}`}
+              onClick={() => setDirection('backward')}
+            >
+              {t('offset.backward')}
+            </button>
+          </div>
         </div>
 
         <div className="form-group">
@@ -113,10 +147,10 @@ export const OffsetCalculator: React.FC = () => {
             <input
               type="number"
               className="form-input"
-              placeholder="例如：10"
+              placeholder={t('offset.amountPlaceholder')}
               value={offsetStr}
               onChange={handleOffsetChange}
-              min={mode === 'thDay' ? 1 : undefined}
+              min={0}
             />
           </div>
         </div>
@@ -148,20 +182,20 @@ export const OffsetCalculator: React.FC = () => {
                   const details = getLunarDetails(result.dateStr, zone);
                   if (!details) return null;
                   return (
-                    <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', borderTop: '1px dashed var(--border-subtle)', paddingTop: '12px' }}>
-                      <div style={{ fontSize: '1.25rem', color: 'var(--accent-primary)', fontWeight: 700 }}>
+                    <div className="offset-lunar-display">
+                      <div className="offset-lunar-title">
                         {t('offset.lunarTitle')} {details.lunarStr}
                       </div>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <div className="offset-lunar-pills">
                         <span className="meta-pill">{details.yearGanZhi}</span>
                         <span className="meta-pill">{t('lunar.zodiacLabel')}{details.shengXiao}</span>
                         {details.jieQi && (
-                          <span className="meta-pill" style={{ borderColor: 'var(--color-success)', color: 'var(--color-success)', background: 'rgba(16, 185, 129, 0.05)' }}>
+                          <span className="meta-pill jieqi">
                             {details.jieQi}
                           </span>
                         )}
                         {details.festivals.map(f => (
-                          <span key={f} className="meta-pill" style={{ borderColor: 'var(--accent-secondary)', color: 'var(--accent-secondary)', background: 'rgba(168, 85, 247, 0.05)' }}>
+                          <span key={f} className="meta-pill festival">
                             {f}
                           </span>
                         ))}
@@ -175,7 +209,7 @@ export const OffsetCalculator: React.FC = () => {
             <RangeVisualizer 
               startDateStr={startDate} 
               endDateStr={result.dateStr} 
-              totalDays={parseInt(offsetStr, 10) * (mode === 'thDay' ? 1 : 1) - (mode === 'thDay' ? 1 : 0)} 
+              totalDays={visualizerTotalDays} 
               startZone={zone}
               endZone={zone}
               locale={locale}
