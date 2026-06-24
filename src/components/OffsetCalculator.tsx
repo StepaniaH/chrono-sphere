@@ -8,7 +8,7 @@ import { RangeVisualizer } from './RangeVisualizer';
 import { ShareButton } from './ShareButton';
 import type { CardOffsetData } from './CardRenderer';
 import { encodeCardCode } from '../utils/cardCodec';
-import { CARD_TEMPLATES, FREE_TEXT_TEMPLATE_ID, fillTemplate } from '../utils/cardTemplates';
+
 import { DateTime } from 'luxon';
 import { usePreferences } from '../context/usePreferences';
 
@@ -29,10 +29,8 @@ export const OffsetCalculator: React.FC = () => {
   const [offsetStr, setOffsetStr] = useState('10');
   const [mode, setMode] = useState<'thDay' | 'interval'>('interval');
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
-  const [templateId, setTemplateId] = useState(0);
-  const [customText, setCustomText] = useState('');
 
-  const offset = parseInt(offsetStr, 10);
+  const offset = Math.min(parseInt(offsetStr, 10) || 0, 99999);
   const signedOffset = direction === 'backward' ? -Math.abs(offset) : Math.abs(offset);
   
   const { result, transitions, error } = useMemo<{
@@ -73,15 +71,8 @@ export const OffsetCalculator: React.FC = () => {
 
     const absOffset = Math.abs(offset);
 
-    // Build custom text from template
-    const template = CARD_TEMPLATES.find(t => t.id === templateId);
-    let displayText = customText;
-    if (template && templateId !== FREE_TEXT_TEMPLATE_ID) {
-      const vars: Record<string, string> = { N: String(absOffset) };
-      if (template.userVars.includes('事件')) vars['事件'] = customText || '...';
-      if (template.userVars.includes('项目名')) vars['项目名'] = customText || '...';
-      displayText = fillTemplate(template, vars);
-    }
+    // Default card text (user can customize in share modal)
+    const displayText = `${absOffset} ${locale === 'zh' ? '天' : 'days'}`;
 
     // Calculate workday/weekend counts for card (same as visualizer)
     let workdays = 0, weekends = 0;
@@ -111,8 +102,8 @@ export const OffsetCalculator: React.FC = () => {
       version: 0,
       tab: 'offset',
       theme: 'auto',
-      templateId,
-      customText,
+      templateId: 0,
+      customText: '',
       params: {
         zone,
         startDate,
@@ -123,7 +114,7 @@ export const OffsetCalculator: React.FC = () => {
     });
 
     return {
-      customText: displayText || `${absOffset} ${locale === 'zh' ? '天' : 'days'}`,
+      customText: displayText,
       startDate,
       resultDate: result.dateStr,
       weekday: result.weekday,
@@ -143,10 +134,7 @@ export const OffsetCalculator: React.FC = () => {
       theme: 'auto' as const,
       locale,
     };
-  }, [result, offset, startDate, zone, direction, mode, templateId, customText, locale]);
-
-  // Filter templates for offset tab
-  const offsetTemplates = CARD_TEMPLATES.filter(t => t.tabs.includes('offset'));
+  }, [result, offset, startDate, zone, direction, mode, locale]);
 
   return (
     <div className="calculator-grid fade-in">
@@ -238,46 +226,12 @@ export const OffsetCalculator: React.FC = () => {
               value={offsetStr}
               onChange={handleOffsetChange}
               min={0}
+              max={99999}
             />
           </div>
         </div>
 
-        {/* Template selector */}
-        {result && (
-          <div className="form-group">
-            <label className="form-label">{locale === 'zh' ? '卡片文案' : 'Card text'}</label>
-            <div className="segmented-control" style={{ flexWrap: 'wrap' }}>
-              {offsetTemplates.map(tmpl => (
-                <button
-                  key={tmpl.id}
-                  type="button"
-                  className={`segmented-btn ${templateId === tmpl.id ? 'active' : ''}`}
-                  onClick={() => { setTemplateId(tmpl.id); setCustomText(''); }}
-                >
-                  {locale === 'zh' ? tmpl.labelZh : tmpl.labelEn}
-                </button>
-              ))}
-              <button
-                type="button"
-                className={`segmented-btn ${templateId === FREE_TEXT_TEMPLATE_ID ? 'active' : ''}`}
-                onClick={() => setTemplateId(FREE_TEXT_TEMPLATE_ID)}
-              >
-                {locale === 'zh' ? '自由输入' : 'Custom'}
-              </button>
-            </div>
-            {(templateId === FREE_TEXT_TEMPLATE_ID || CARD_TEMPLATES.find(t => t.id === templateId)?.userVars.length) && (
-              <input
-                type="text"
-                className="form-input"
-                style={{ marginTop: '6px' }}
-                placeholder={locale === 'zh' ? '输入文案（最多30字）' : 'Enter text (max 30 chars)'}
-                value={customText}
-                onChange={(e) => setCustomText(e.target.value.slice(0, 30))}
-                maxLength={30}
-              />
-            )}
-          </div>
-        )}
+
       </div>
 
       {/* Results panel */}

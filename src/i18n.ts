@@ -89,7 +89,7 @@ const zh = {
     startHelp: '「仅包括首日」：算头不算尾。例如 6月1日 到 6月2日 为 1 天。',
     endHelp: '「仅包括尾日」：算尾不算头。例如 6月1日 到 6月2日 为 1 天。',
     excludeHelp: '「不包括首尾日」：仅计算夹在中间的天数。',
-    calendarDiff: '日历天数差 (Local Calendar Diff)',
+    calendarDiff: '日历天数差',
     workdays: '工作日 (周一至周五)',
     weekends: '双休日 (周六至周日)',
     absoluteTime: '跨时区绝对时间差 (从起始日 0 点到结束日 0 点实际流逝时间)',
