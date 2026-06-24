@@ -48,6 +48,9 @@ const zh = {
   offset: {
     baseZone: '基准时区',
     startDate: '起始日期',
+    direction: '偏移方向',
+    forward: '向前（未来）',
+    backward: '向后（过去）',
     mode: '模式选择',
     amount: '偏移天数 (X)',
     intervalMode: '间隔 X 日 (D + X)',
@@ -189,6 +192,9 @@ const en = {
   offset: {
     baseZone: 'Base timezone',
     startDate: 'Start date',
+    direction: 'Direction',
+    forward: 'Forward (future)',
+    backward: 'Backward (past)',
     mode: 'Mode',
     amount: 'Offset days (X)',
     intervalMode: 'Interval X days (D + X)',

@@ -24,41 +24,42 @@ export const OffsetCalculator: React.FC = () => {
   const [startDate, setStartDate] = useState(() => getTodayStr(zone));
   const [offsetStr, setOffsetStr] = useState('10');
   const [mode, setMode] = useState<'thDay' | 'interval'>('interval');
+  const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
+
+  const offset = parseInt(offsetStr, 10);
+  const signedOffset = direction === 'backward' ? -Math.abs(offset) : Math.abs(offset);
   
   const { result, transitions, error } = useMemo<{
     result: DateResult | null;
     transitions: DstTransition[];
     error: string | null;
   }>(() => {
-    const offset = parseInt(offsetStr, 10);
-
     if (!startDate) {
       return { result: null, transitions: [], error: null };
     }
 
-    if (isNaN(offset)) {
+    if (isNaN(signedOffset)) {
       return { result: null, transitions: [], error: t('offset.invalidNumber') };
     }
 
-    const calc = calculateOffset(startDate, offset, mode, zone, locale);
+    const calc = calculateOffset(startDate, signedOffset, mode, zone, locale);
     if (calc.success && calc.result) {
       const dst = detectDstTransitions(startDate, calc.result.dateStr, zone, locale);
       return { result: calc.result, transitions: dst, error: null };
     }
 
     return { result: null, transitions: [], error: calc.error || t('offset.invalidCalculation') };
-  }, [startDate, offsetStr, mode, zone, locale, t]);
+  }, [startDate, signedOffset, mode, zone, locale, t]);
 
   const handleOffsetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOffsetStr(e.target.value);
   };
 
   const visualizerTotalDays = useMemo(() => {
-    const o = parseInt(offsetStr, 10);
-    if (isNaN(o)) return 0;
-    const inclusive = Math.abs(o) + (mode === 'interval' ? 1 : 0);
-    return o >= 0 ? inclusive : -inclusive;
-  }, [offsetStr, mode]);
+    if (isNaN(signedOffset)) return 0;
+    const inclusive = Math.abs(signedOffset) + (mode === 'interval' ? 1 : 0);
+    return signedOffset >= 0 ? inclusive : -inclusive;
+  }, [signedOffset, mode]);
 
   return (
     <div className="calculator-grid fade-in">
@@ -114,6 +115,26 @@ export const OffsetCalculator: React.FC = () => {
         </div>
 
         <div className="form-group">
+          <label className="form-label">{t('offset.direction')}</label>
+          <div className="segmented-control">
+            <button
+              type="button"
+              className={`segmented-btn ${direction === 'forward' ? 'active' : ''}`}
+              onClick={() => setDirection('forward')}
+            >
+              {t('offset.forward')}
+            </button>
+            <button
+              type="button"
+              className={`segmented-btn ${direction === 'backward' ? 'active' : ''}`}
+              onClick={() => setDirection('backward')}
+            >
+              {t('offset.backward')}
+            </button>
+          </div>
+        </div>
+
+        <div className="form-group">
           <label className="form-label">{t('offset.amount')}</label>
           <div className="input-icon-wrapper">
             <Plus className="input-icon" size={18} />
@@ -123,7 +144,7 @@ export const OffsetCalculator: React.FC = () => {
               placeholder="例如：10"
               value={offsetStr}
               onChange={handleOffsetChange}
-              min={mode === 'thDay' ? 1 : undefined}
+              min={0}
             />
           </div>
         </div>
