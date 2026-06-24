@@ -85,17 +85,12 @@ class BitWriter {
     }
   }
 
-  writeString(s: string, maxBytes: number): void {
+  writeString(s: string): void {
     const encoder = new TextEncoder();
     const encoded = encoder.encode(s);
-    const len = Math.min(encoded.length, maxBytes);
-    this.write(len, 5); // customLen field is 5 bits = max 31
-    for (let i = 0; i < len; i++) {
+    this.write(encoded.length, 5); // length (max 31 for 5 bits)
+    for (let i = 0; i < encoded.length; i++) {
       this.write(encoded[i], 8);
-    }
-    // Pad remaining
-    for (let i = len; i < maxBytes; i++) {
-      this.write(0, 8);
     }
   }
 
@@ -146,19 +141,14 @@ class BitReader {
     return raw;
   }
 
-  readString(maxBytes: number): string {
+  readString(): string {
     const len = this.read(5);
-    const actualLen = Math.min(len, maxBytes);
     const raw: number[] = [];
-    for (let i = 0; i < actualLen; i++) {
+    for (let i = 0; i < len; i++) {
       raw.push(this.read(8));
     }
-    // Skip padding
-    for (let i = actualLen; i < maxBytes; i++) {
-      this.read(8);
-    }
     const decoder = new TextDecoder();
-    return decoder.decode(new Uint8Array(raw)).replace(/\0/g, '');
+    return decoder.decode(new Uint8Array(raw));
   }
 }
 
@@ -236,7 +226,7 @@ export function encodeCardCode(card: CardCode): string {
   w.write(card.tab === 'offset' ? 0 : card.tab === 'interval' ? 1 : 2, 2);
   w.write(card.theme === 'auto' ? 0 : card.theme === 'light' ? 1 : 2, 2);
   w.write(card.templateId, 8);
-  w.writeString(card.customText, 30);
+  w.writeString(card.customText);
 
   switch (card.tab) {
     case 'offset': {
@@ -294,7 +284,7 @@ export function decodeCardCode(code: string): CardCode | null {
     const theme: CardTheme = themeRaw === 0 ? 'auto' : themeRaw === 1 ? 'light' : 'dark';
 
     const templateId = r.read(8);
-    const customText = r.readString(30);
+    const customText = r.readString();
 
     let params: OffsetParams | IntervalParams | LunarParams;
 
@@ -343,9 +333,15 @@ export function decodeCardCode(code: string): CardCode | null {
 // ---------------------------------------------------------------------------
 
 function bytesToBase62(bytes: Uint8Array): string {
-  // Convert bytes to a big integer, then to base62
+  // Prepend a length byte so leading zeros in the payload survive
+  // the BigInt conversion (BigInt drops leading zeros).
+  const len = bytes.length;
+  const padded = new Uint8Array(len + 1);
+  padded[0] = len; // length byte (max 255)
+  padded.set(bytes, 1);
+
   let num = 0n;
-  for (const b of bytes) {
+  for (const b of padded) {
     num = (num << 8n) | BigInt(b);
   }
 
@@ -362,6 +358,8 @@ function bytesToBase62(bytes: Uint8Array): string {
 }
 
 function base62ToBytes(code: string): Uint8Array {
+  if (!code) throw new Error('Empty code');
+
   let num = 0n;
   for (const c of code) {
     const idx = BASE62.indexOf(c);
@@ -369,7 +367,7 @@ function base62ToBytes(code: string): Uint8Array {
     num = num * 62n + BigInt(idx);
   }
 
-  if (num === 0n) return new Uint8Array([0]);
+  if (num === 0n) return new Uint8Array([0, 0]);
 
   // Convert big int back to bytes
   const bytes: number[] = [];
@@ -378,5 +376,8 @@ function base62ToBytes(code: string): Uint8Array {
     num = num >> 8n;
   }
 
-  return new Uint8Array(bytes);
+  // First byte is the length prefix
+  if (bytes.length < 2) throw new Error('Invalid encoded data');
+  const len = bytes[0];
+  return new Uint8Array(bytes.slice(1, 1 + len));
 }

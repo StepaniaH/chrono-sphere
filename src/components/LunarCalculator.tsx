@@ -6,6 +6,10 @@ import { getLunarDetails, convertLunarToSolar, calculateOffset, getZoneShortLabe
 import type { LunarResult } from '../utils/dateUtils';
 import { DateTime } from 'luxon';
 import { usePreferences } from '../context/usePreferences';
+import { ShareButton } from './ShareButton';
+import type { CardLunarData } from './CardRenderer';
+import { encodeCardCode } from '../utils/cardCodec';
+import { CARD_TEMPLATES, FREE_TEXT_TEMPLATE_ID, fillTemplate } from '../utils/cardTemplates';
 
 // Traditional Chinese Month Names
 const LUNAR_MONTHS = [
@@ -90,6 +94,8 @@ export const LunarCalculator: React.FC = () => {
   });
   const [offsetStr, setOffsetStr] = useState('10');
   const [mode, setMode] = useState<'thDay' | 'interval'>('interval');
+  const [templateId, setTemplateId] = useState(0);
+  const [customText, setCustomText] = useState('');
 
   const availableDays = useMemo(() => {
     return Array.from({ length: 30 }, (_, index) => index + 1).filter((candidate) => {
@@ -160,6 +166,47 @@ export const LunarCalculator: React.FC = () => {
       error: null,
     };
   }, [year, month, effectiveDay, isLeap, offsetStr, mode, zone, locale, t]);
+
+  const cardData = useMemo<CardLunarData | null>(() => {
+    if (!targetLunarDetails) return null;
+
+    const template = CARD_TEMPLATES.find(t => t.id === templateId);
+    let displayText = customText;
+    if (template && templateId !== FREE_TEXT_TEMPLATE_ID) {
+      displayText = fillTemplate(template, { N: String(Math.abs(parseInt(offsetStr, 10) || 0)) });
+    }
+
+    const offset = parseInt(offsetStr, 10) || 0;
+    const code = encodeCardCode({
+      version: 0, tab: 'lunar', theme: 'auto', templateId, customText: displayText || '',
+      params: { zone, year, month, day: effectiveDay, leap: isLeap, mode, offset },
+    });
+
+    let weekday = '';
+    if (targetSolarDate) {
+      try {
+        weekday = DateTime.fromISO(targetSolarDate).setLocale(locale === 'en' ? 'en-US' : 'zh-CN').toFormat('ccc');
+      } catch { /* ignore */ }
+    }
+
+    return {
+      customText: displayText || '',
+      lunarYear: year,
+      lunarMonth: month,
+      lunarDay: effectiveDay,
+      isLeap,
+      lunarStr: targetLunarDetails.lunarStr || '',
+      yearGanZhi: targetLunarDetails.yearGanZhi || '',
+      shengXiao: targetLunarDetails.shengXiao || '',
+      solarDate: targetSolarDate || '',
+      weekday,
+      jieQi: targetLunarDetails.jieQi || undefined,
+      festivals: targetLunarDetails.festivals,
+      auspicious: targetLunarDetails.yi,
+      inauspicious: targetLunarDetails.ji,
+      code, theme: 'auto' as const, locale,
+    };
+  }, [targetLunarDetails, targetSolarDate, year, month, effectiveDay, isLeap, offsetStr, mode, zone, templateId, customText, locale]);
 
   return (
     <div className="calculator-grid fade-in">
@@ -279,6 +326,44 @@ export const LunarCalculator: React.FC = () => {
             />
           </div>
         </div>
+
+        {/* Template selector */}
+        {targetLunarDetails && (
+          <div className="form-group">
+            <label className="form-label">{locale === 'zh' ? '卡片文案' : 'Card text'}</label>
+            <div className="segmented-control" style={{ flexWrap: 'wrap' }}>
+              {CARD_TEMPLATES.filter(tmpl => tmpl.tabs.includes('lunar')).map(tmpl => (
+                <button
+                  key={tmpl.id}
+                  type="button"
+                  className={`segmented-btn ${templateId === tmpl.id ? 'active' : ''}`}
+                  onClick={() => { setTemplateId(tmpl.id); setCustomText(''); }}
+                >
+                  {locale === 'zh' ? tmpl.labelZh : tmpl.labelEn}
+                </button>
+              ))}
+              <button
+                type="button"
+                className={`segmented-btn ${templateId === FREE_TEXT_TEMPLATE_ID ? 'active' : ''}`}
+                onClick={() => setTemplateId(FREE_TEXT_TEMPLATE_ID)}
+              >
+                {locale === 'zh' ? '自由输入' : 'Custom'}
+              </button>
+            </div>
+            {(templateId === FREE_TEXT_TEMPLATE_ID || CARD_TEMPLATES.find(t => t.id === templateId)?.userVars.length) && (
+              <input
+                type="text"
+                className="form-input"
+                style={{ marginTop: '6px' }}
+                placeholder={locale === 'zh' ? '输入文案（最多30字）' : 'Enter text (max 30 chars)'}
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value.slice(0, 30))}
+                maxLength={30}
+              />
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* Results section */}
@@ -297,7 +382,10 @@ export const LunarCalculator: React.FC = () => {
           <div className="results-content">
             {/* Target Gregorian Date */}
             <div>
-              <div className="result-card-heading">{t('lunar.targetSolar')}</div>
+              <div className="result-card-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{t('lunar.targetSolar')}</span>
+                {cardData && <ShareButton cardType="lunar" cardData={cardData} locale={locale} />}
+              </div>
               <div style={{ marginTop: '10px' }}>
                 <div className="big-date-display">{targetSolarDate}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '6px' }}>

@@ -8,6 +8,10 @@ import type { DstTransitionWithZone } from './DstAuditor';
 import { RangeVisualizer } from './RangeVisualizer';
 import { DateTime } from 'luxon';
 import { usePreferences } from '../context/usePreferences';
+import { ShareButton } from './ShareButton';
+import type { CardIntervalData } from './CardRenderer';
+import { encodeCardCode } from '../utils/cardCodec';
+import { CARD_TEMPLATES, FREE_TEXT_TEMPLATE_ID, fillTemplate } from '../utils/cardTemplates';
 
 export const IntervalCalculator: React.FC = () => {
   const { locale, t } = usePreferences();
@@ -34,6 +38,8 @@ export const IntervalCalculator: React.FC = () => {
   const [startDate, setStartDate] = useState(() => getTodayStr(startZone));
   const [endDate, setEndDate] = useState(() => getFutureStr(endZone));
   const [inclusion, setInclusion] = useState<'both' | 'start' | 'end' | 'exclude'>('both');
+  const [templateId, setTemplateId] = useState(0);
+  const [customText, setCustomText] = useState('');
 
   const { result, transitions, error } = useMemo<{
     result: IntervalResult | null;
@@ -73,6 +79,53 @@ export const IntervalCalculator: React.FC = () => {
 
     return { result: null, transitions: [], error: calc.error || t('interval.invalid') };
   }, [startDate, endDate, inclusion, startZone, endZone, locale, t]);
+
+  const cardData = useMemo<CardIntervalData | null>(() => {
+    if (!result) return null;
+
+    const template = CARD_TEMPLATES.find(t => t.id === templateId);
+    let displayText = customText;
+    if (template && templateId !== FREE_TEXT_TEMPLATE_ID) {
+      const vars: Record<string, string> = { N: String(Math.abs(result.totalDays)) };
+      displayText = fillTemplate(template, vars);
+    }
+
+    const code = encodeCardCode({
+      version: 0,
+      tab: 'interval',
+      theme: 'auto',
+      templateId,
+      customText,
+      params: { startZone, endZone, startDate, endDate, inclusion },
+    });
+
+    const startLunar = getLunarDetails(startDate, startZone);
+    const endLunar = getLunarDetails(endDate, endZone);
+
+    const totalAbs = Math.abs(result.totalDays);
+    const workdayPercent = Math.round((result.workdays / (result.workdays + result.weekends || 1)) * 100);
+
+    return {
+      customText: displayText || `${totalAbs} ${locale === 'zh' ? '天' : 'days'}`,
+      startDate,
+      endDate,
+      startZone,
+      endZone,
+      totalDays: totalAbs,
+      isNegative: result.isNegative,
+      workdays: result.workdays,
+      weekends: result.weekends,
+      workdayPercent,
+      weekendPercent: 100 - workdayPercent,
+      absoluteDays: result.absoluteDays,
+      absoluteHours: result.absoluteHours,
+      startLunarStr: startLunar ? `${startLunar.lunarStr} (${startLunar.yearGanZhi} · ${startLunar.shengXiao})` : undefined,
+      endLunarStr: endLunar ? `${endLunar.lunarStr} (${endLunar.yearGanZhi} · ${endLunar.shengXiao})` : undefined,
+      code,
+      theme: 'auto' as const,
+      locale,
+    };
+  }, [result, startDate, endDate, startZone, endZone, inclusion, templateId, customText, locale]);
 
   return (
     <div className="calculator-grid fade-in">
@@ -180,6 +233,43 @@ export const IntervalCalculator: React.FC = () => {
             {inclusion === 'exclude' && t('interval.excludeHelp')}
           </span>
         </div>
+
+        {/* Template selector */}
+        {result && (
+          <div className="form-group">
+            <label className="form-label">{locale === 'zh' ? '卡片文案' : 'Card text'}</label>
+            <div className="segmented-control" style={{ flexWrap: 'wrap' }}>
+              {CARD_TEMPLATES.filter(t => t.tabs.includes('interval')).map(tmpl => (
+                <button
+                  key={tmpl.id}
+                  type="button"
+                  className={`segmented-btn ${templateId === tmpl.id ? 'active' : ''}`}
+                  onClick={() => { setTemplateId(tmpl.id); setCustomText(''); }}
+                >
+                  {locale === 'zh' ? tmpl.labelZh : tmpl.labelEn}
+                </button>
+              ))}
+              <button
+                type="button"
+                className={`segmented-btn ${templateId === FREE_TEXT_TEMPLATE_ID ? 'active' : ''}`}
+                onClick={() => setTemplateId(FREE_TEXT_TEMPLATE_ID)}
+              >
+                {locale === 'zh' ? '自由输入' : 'Custom'}
+              </button>
+            </div>
+            {(templateId === FREE_TEXT_TEMPLATE_ID || CARD_TEMPLATES.find(t => t.id === templateId)?.userVars.length) && (
+              <input
+                type="text"
+                className="form-input"
+                style={{ marginTop: '6px' }}
+                placeholder={locale === 'zh' ? '输入文案（最多30字）' : 'Enter text (max 30 chars)'}
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value.slice(0, 30))}
+                maxLength={30}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Results panel */}
@@ -196,7 +286,12 @@ export const IntervalCalculator: React.FC = () => {
         ) : (
           <div className="results-content">
             <div>
-              <div className="result-card-heading">{t('interval.calendarDiff')}</div>
+              <div className="result-card-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{t('interval.calendarDiff')}</span>
+                {cardData && (
+                  <ShareButton cardType="interval" cardData={cardData} locale={locale} />
+                )}
+              </div>
               <div className="big-result-wrapper">
                 <span className="big-result-val">
                   {result.totalDays >= 0 ? result.totalDays : `-${Math.abs(result.totalDays)}`}
