@@ -20,6 +20,7 @@ const zh = {
     themeDark: '深色模式',
   },
   tabs: {
+    label: '选择计算器',
     offset: '日期偏移计算',
     interval: '日期区间计算',
     lunar: '农历日期计算',
@@ -160,6 +161,7 @@ const en = {
     themeDark: 'Dark',
   },
   tabs: {
+    label: 'Choose calculator',
     offset: 'Offset calculator',
     interval: 'Interval calculator',
     lunar: 'Lunar calculator',
