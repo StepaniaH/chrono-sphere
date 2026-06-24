@@ -53,6 +53,13 @@ export const OffsetCalculator: React.FC = () => {
     setOffsetStr(e.target.value);
   };
 
+  const visualizerTotalDays = useMemo(() => {
+    const o = parseInt(offsetStr, 10);
+    if (isNaN(o)) return 0;
+    const inclusive = Math.abs(o) + (mode === 'interval' ? 1 : 0);
+    return o >= 0 ? inclusive : -inclusive;
+  }, [offsetStr, mode]);
+
   return (
     <div className="calculator-grid fade-in">
       {/* Form controls */}
@@ -175,7 +182,7 @@ export const OffsetCalculator: React.FC = () => {
             <RangeVisualizer 
               startDateStr={startDate} 
               endDateStr={result.dateStr} 
-              totalDays={parseInt(offsetStr, 10) * (mode === 'thDay' ? 1 : 1) - (mode === 'thDay' ? 1 : 0)} 
+              totalDays={visualizerTotalDays} 
               startZone={zone}
               endZone={zone}
               locale={locale}
