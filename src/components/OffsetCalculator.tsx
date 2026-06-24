@@ -99,18 +99,24 @@ export const OffsetCalculator: React.FC = () => {
               className={`segmented-btn ${mode === 'interval' ? 'active' : ''}`}
               onClick={() => setMode('interval')}
             >
-              {t('offset.intervalMode')}
+              {direction === 'forward'
+                ? t('offset.intervalMode')
+                : t('offset.intervalModeBackward')}
             </button>
             <button
               type="button"
               className={`segmented-btn ${mode === 'thDay' ? 'active' : ''}`}
               onClick={() => setMode('thDay')}
             >
-              {t('offset.thDayMode')}
+              {direction === 'forward'
+                ? t('offset.thDayMode')
+                : t('offset.thDayModeBackward')}
             </button>
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '4px' }}>
-            {mode === 'interval' ? t('offset.intervalHelp') : t('offset.thDayHelp')}
+            {mode === 'interval'
+              ? (direction === 'forward' ? t('offset.intervalHelp') : t('offset.intervalHelpBackward'))
+              : (direction === 'forward' ? t('offset.thDayHelp') : t('offset.thDayHelpBackward'))}
           </span>
         </div>
 
